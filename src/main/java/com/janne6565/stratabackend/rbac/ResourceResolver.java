@@ -5,6 +5,8 @@ import com.janne6565.stratabackend.auth.UserRepository;
 import com.janne6565.stratabackend.catalog.Datasource;
 import com.janne6565.stratabackend.catalog.DatasourceRepository;
 import com.janne6565.stratabackend.common.NotFoundException;
+import com.janne6565.stratabackend.group.DbGroup;
+import com.janne6565.stratabackend.group.DbGroupRepository;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
@@ -18,11 +20,15 @@ public class ResourceResolver {
 
     private final UserRepository userRepository;
     private final DatasourceRepository datasourceRepository;
+    private final DbGroupRepository groupRepository;
 
     public ResourceResolver(
-            UserRepository userRepository, DatasourceRepository datasourceRepository) {
+            UserRepository userRepository,
+            DatasourceRepository datasourceRepository,
+            DbGroupRepository groupRepository) {
         this.userRepository = userRepository;
         this.datasourceRepository = datasourceRepository;
+        this.groupRepository = groupRepository;
     }
 
     /** Resolves a reference id (UUID or its string form) to a {@link User}, or 404s. */
@@ -39,6 +45,14 @@ public class ResourceResolver {
         return datasourceRepository
                 .findById(id)
                 .orElseThrow(() -> new NotFoundException("Datasource not found: " + id));
+    }
+
+    /** Resolves a reference id to a {@link DbGroup}, or 404s. */
+    public DbGroup requireGroup(Object referenceId) {
+        UUID id = toUuid(referenceId);
+        return groupRepository
+                .findById(id)
+                .orElseThrow(() -> new NotFoundException("Group not found: " + id));
     }
 
     private UUID toUuid(Object referenceId) {
