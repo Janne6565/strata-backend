@@ -27,11 +27,6 @@ public class DiscoveryPolicies {
         return isAdmin(caller);
     }
 
-    @Validates(Operation.DB_VIEW)
-    public boolean canView(ResourceResolver resolver, Object referenceId, User caller) {
-        return isAdmin(caller);
-    }
-
     private boolean isAdmin(User caller) {
         return caller.getRole().isAtLeast(Role.ADMIN);
     }

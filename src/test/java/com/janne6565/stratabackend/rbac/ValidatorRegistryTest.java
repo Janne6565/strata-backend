@@ -14,7 +14,7 @@ import org.springframework.context.ApplicationContext;
 /** Verifies fail-fast wiring and the policy decisions, without a Spring context or Docker. */
 class ValidatorRegistryTest {
 
-    private final ResourceResolver resolver = new ResourceResolver(null);
+    private final ResourceResolver resolver = new ResourceResolver(null, null);
 
     private ValidatorRegistry registryWith(Object... beans) {
         ApplicationContext context = mock(ApplicationContext.class);
@@ -28,7 +28,11 @@ class ValidatorRegistryTest {
 
     @Test
     void wiresEveryOperationWhenAllPoliciesPresent() {
-        ValidatorRegistry registry = registryWith(new UserPolicies(), new GrantPolicies(), new DiscoveryPolicies());
+        ValidatorRegistry registry = registryWith(
+                        new UserPolicies(),
+                        new GrantPolicies(),
+                        new DiscoveryPolicies(),
+                        new DatabaseAccessPolicies(null));
 
         registry.afterSingletonsInstantiated(); // must not throw — all operations covered
     }
@@ -44,7 +48,11 @@ class ValidatorRegistryTest {
 
     @Test
     void adminPassesAndPlainUserFailsUserListPolicy() {
-        ValidatorRegistry registry = registryWith(new UserPolicies(), new GrantPolicies(), new DiscoveryPolicies());
+        ValidatorRegistry registry = registryWith(
+                        new UserPolicies(),
+                        new GrantPolicies(),
+                        new DiscoveryPolicies(),
+                        new DatabaseAccessPolicies(null));
         registry.afterSingletonsInstantiated();
 
         User admin = new User("admin", "hash", Role.ADMIN);

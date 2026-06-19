@@ -5,6 +5,7 @@ import com.janne6565.stratabackend.catalog.dto.DatasourceResponse;
 import com.janne6565.stratabackend.catalog.dto.ManualAddRequest;
 import com.janne6565.stratabackend.common.ConflictException;
 import com.janne6565.stratabackend.common.NotFoundException;
+import com.janne6565.stratabackend.grant.GrantEvaluator;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -17,14 +18,21 @@ import org.springframework.util.StringUtils;
 public class CatalogService {
 
     private final DatasourceRepository datasourceRepository;
+    private final GrantEvaluator grantEvaluator;
 
-    public CatalogService(DatasourceRepository datasourceRepository) {
+    public CatalogService(
+            DatasourceRepository datasourceRepository, GrantEvaluator grantEvaluator) {
         this.datasourceRepository = datasourceRepository;
+        this.grantEvaluator = grantEvaluator;
     }
 
+    /** Service-layer scoping (enforcement layer 2): callers see only datasources they may read. */
     @Transactional(readOnly = true)
-    public List<DatasourceResponse> list() {
-        return datasourceRepository.findAll().stream().map(DatasourceResponse::from).toList();
+    public List<DatasourceResponse> list(User caller) {
+        return datasourceRepository.findAll().stream()
+                .filter(ds -> grantEvaluator.canRead(caller, ds))
+                .map(DatasourceResponse::from)
+                .toList();
     }
 
     @Transactional(readOnly = true)

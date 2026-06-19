@@ -17,5 +17,8 @@ public enum Operation {
     DISCOVERY_RESCAN,
     DB_REGISTER,
     DB_UNREGISTER,
-    DB_VIEW
+    DB_VIEW,
+    DB_BROWSE,
+    DB_QUERY_READ,
+    DB_QUERY_WRITE
 }

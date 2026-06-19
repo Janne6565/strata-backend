@@ -30,9 +30,10 @@ public class InventoryController implements InventoryApi {
     }
 
     @Override
-    @NeedsValidation(Operation.DB_VIEW)
     public List<DatasourceResponse> list() {
-        return catalogService.list();
+        // Collection endpoint: any authenticated caller; results are scoped to grants in the service
+        // layer (enforcement layer 2), so no single-resource @NeedsValidation gate here.
+        return catalogService.list(currentUser.require());
     }
 
     @Override
