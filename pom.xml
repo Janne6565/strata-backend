@@ -92,6 +92,12 @@
             <artifactId>mongodb-driver-sync</artifactId>
         </dependency>
 
+        <!-- Engine driver: Redis (Lettuce, BOM-managed) -->
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+        </dependency>
+
         <!-- Kubernetes discovery (fabric8; not BOM-managed; version pinned above) -->
         <dependency>
             <groupId>io.fabric8</groupId>
