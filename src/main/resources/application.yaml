@@ -17,6 +17,12 @@ spring:
 
 # Strata application config (bound via @ConfigurationProperties).
 strata:
+  auth:
+    # First-owner bootstrap. DEV defaults — override via STRATA_OWNER_* and change after first login.
+    # Only used when no OWNER exists yet.
+    bootstrap:
+      username: ${STRATA_OWNER_USERNAME:owner}
+      password: ${STRATA_OWNER_PASSWORD:change-me-now}
   jwt:
     # DEV ONLY — must be overridden via STRATA_JWT_SECRET in every real environment.
     secret: ${STRATA_JWT_SECRET:dev-only-insecure-secret-change-me-0123456789}
