@@ -28,7 +28,7 @@ class ValidatorRegistryTest {
 
     @Test
     void wiresEveryOperationWhenAllPoliciesPresent() {
-        ValidatorRegistry registry = registryWith(new UserPolicies());
+        ValidatorRegistry registry = registryWith(new UserPolicies(), new GrantPolicies());
 
         registry.afterSingletonsInstantiated(); // must not throw — all operations covered
     }
@@ -44,7 +44,7 @@ class ValidatorRegistryTest {
 
     @Test
     void adminPassesAndPlainUserFailsUserListPolicy() {
-        ValidatorRegistry registry = registryWith(new UserPolicies());
+        ValidatorRegistry registry = registryWith(new UserPolicies(), new GrantPolicies());
         registry.afterSingletonsInstantiated();
 
         User admin = new User("admin", "hash", Role.ADMIN);

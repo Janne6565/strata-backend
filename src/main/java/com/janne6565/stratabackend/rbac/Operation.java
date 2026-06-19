@@ -10,5 +10,8 @@ public enum Operation {
     USER_LIST,
     USER_CREATE,
     USER_CHANGE_ROLE,
-    USER_DELETE
+    USER_DELETE,
+    GRANT_LIST,
+    GRANT_CREATE,
+    GRANT_REVOKE
 }
