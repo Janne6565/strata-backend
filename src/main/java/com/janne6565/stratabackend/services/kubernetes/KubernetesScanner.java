@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.kubernetes;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.model.core.WorkloadDescriptor;
 import io.fabric8.kubernetes.api.model.Container;
@@ -22,13 +23,11 @@ import org.springframework.stereotype.Component;
  * detector matching and credential resolution run downstream on the descriptors.
  */
 @Component
+@RequiredArgsConstructor
 public class KubernetesScanner {
 
     private final KubernetesClient client;
 
-    public KubernetesScanner(KubernetesClient client) {
-        this.client = client;
-    }
 
     public List<WorkloadDescriptor> scan() {
         List<WorkloadDescriptor> descriptors = new ArrayList<>();

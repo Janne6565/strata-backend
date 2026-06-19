@@ -1,9 +1,8 @@
 package com.janne6565.stratabackend.controller;
+import lombok.extern.slf4j.Slf4j;
 
 import com.janne6565.stratabackend.model.exception.BaseException;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
@@ -15,10 +14,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * Translates exceptions into RFC 7807 {@link ProblemDetail} responses. Never leaks stack traces
  * or credential material to clients (AUTH.md, "Secrets & sensitive data").
  */
+@Slf4j
 @RestControllerAdvice
 public class ExceptionController {
 
-    private static final Logger log = LoggerFactory.getLogger(ExceptionController.class);
 
     @ExceptionHandler(BaseException.class)
     public ProblemDetail handleBase(BaseException ex) {

@@ -1,11 +1,11 @@
 package com.janne6565.stratabackend.services.auth;
+import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.configuration.security.AuthProperties;
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.core.Role;
 import com.janne6565.stratabackend.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,23 +17,16 @@ import org.springframework.util.StringUtils;
  * Bootstraps the first {@code OWNER} on startup so a fresh deployment is reachable. Runs only when
  * no owner exists; idempotent and a no-op once the system is seeded. Never logs the password.
  */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class OwnerSeeder implements ApplicationRunner {
 
-    private static final Logger log = LoggerFactory.getLogger(OwnerSeeder.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthProperties authProperties;
 
-    public OwnerSeeder(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            AuthProperties authProperties) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.authProperties = authProperties;
-    }
 
     @Override
     @Transactional

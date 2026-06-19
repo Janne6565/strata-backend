@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.core;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.action.CreateUserRequest;
@@ -20,15 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
  * a user cannot delete themselves.
  */
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     @Transactional(readOnly = true)
     public List<UserResponse> list() {

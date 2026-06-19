@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.engine;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
  * the engine enforces read-only at the driver level for {@link QueryMode#READ} (defence-in-depth).
  */
 @Service
+@RequiredArgsConstructor
 public class BrowseService {
 
     private static final int MAX_BROWSE_LIMIT = 500;
@@ -31,16 +33,6 @@ public class BrowseService {
     private final DatasourceRepository datasourceRepository;
     private final AuditService auditService;
 
-    public BrowseService(
-            ConnectionDetailsResolver connectionDetailsResolver,
-            EngineRegistry engineRegistry,
-            DatasourceRepository datasourceRepository,
-            AuditService auditService) {
-        this.connectionDetailsResolver = connectionDetailsResolver;
-        this.engineRegistry = engineRegistry;
-        this.datasourceRepository = datasourceRepository;
-        this.auditService = auditService;
-    }
 
     public SchemaInfo schema(UUID datasourceId) {
         DatasourceEntity datasource = require(datasourceId);

@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.kubernetes;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
@@ -23,13 +24,11 @@ import org.springframework.stereotype.Component;
  * pointer-only resolution and must be supplied via a manual override.
  */
 @Component
+@RequiredArgsConstructor
 public class CredentialReader implements ConnectionDetailsResolver {
 
     private final KubernetesClient client;
 
-    public CredentialReader(KubernetesClient client) {
-        this.client = client;
-    }
 
     @Override
     public ConnectionDetails resolve(DatasourceEntity datasource) {

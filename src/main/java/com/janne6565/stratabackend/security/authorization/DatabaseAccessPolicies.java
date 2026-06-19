@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.security.authorization;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
@@ -11,13 +12,11 @@ import org.springframework.stereotype.Component;
  * also honours read-only grants and global prod safe-mode via {@link GrantEvaluator}.
  */
 @Component
+@RequiredArgsConstructor
 public class DatabaseAccessPolicies {
 
     private final GrantEvaluator grantEvaluator;
 
-    public DatabaseAccessPolicies(GrantEvaluator grantEvaluator) {
-        this.grantEvaluator = grantEvaluator;
-    }
 
     @Validates(Operation.DB_VIEW)
     public boolean canView(ResourceResolver resolver, Object referenceId, UserEntity caller) {

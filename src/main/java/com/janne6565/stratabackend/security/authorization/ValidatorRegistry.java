@@ -1,12 +1,12 @@
 package com.janne6565.stratabackend.security.authorization;
+import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.UserEntity;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.EnumMap;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
@@ -19,17 +19,15 @@ import org.springframework.util.ReflectionUtils;
  * Fails fast (the application will not start) if any operation has no validator or more than one —
  * wiring mistakes surface at boot, never at request time (AUTH.md).
  */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class ValidatorRegistry implements SmartInitializingSingleton {
 
-    private static final Logger log = LoggerFactory.getLogger(ValidatorRegistry.class);
 
     private final ApplicationContext applicationContext;
     private final Map<Operation, Validator> validators = new EnumMap<>(Operation.class);
 
-    public ValidatorRegistry(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-    }
 
     @Override
     public void afterSingletonsInstantiated() {

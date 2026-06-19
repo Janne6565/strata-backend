@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.core;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
@@ -18,16 +19,12 @@ import org.springframework.util.StringUtils;
 
 /** Read and manual-management of the datasource catalog (scan-driven changes live in discovery). */
 @Service
+@RequiredArgsConstructor
 public class CatalogService {
 
     private final DatasourceRepository datasourceRepository;
     private final GrantEvaluator grantEvaluator;
 
-    public CatalogService(
-            DatasourceRepository datasourceRepository, GrantEvaluator grantEvaluator) {
-        this.datasourceRepository = datasourceRepository;
-        this.grantEvaluator = grantEvaluator;
-    }
 
     /** Service-layer scoping (enforcement layer 2): callers see only datasources they may read. */
     @Transactional(readOnly = true)

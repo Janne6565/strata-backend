@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.auth;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.action.LoginRequest;
@@ -12,20 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Verifies credentials and issues access tokens. */
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public AuthService(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            JwtService jwtService) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
-    }
 
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {

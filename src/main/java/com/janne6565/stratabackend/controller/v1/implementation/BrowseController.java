@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.controller.v1.implementation;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.controller.v1.schema.BrowseApi;
 import com.janne6565.stratabackend.model.action.QueryRequest;
@@ -20,15 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
  * safe-mode) is decided by the policy aspect, not by parsing SQL.
  */
 @RestController
+@RequiredArgsConstructor
 public class BrowseController implements BrowseApi {
 
     private final BrowseService browseService;
     private final CurrentUser currentUser;
 
-    public BrowseController(BrowseService browseService, CurrentUser currentUser) {
-        this.browseService = browseService;
-        this.currentUser = currentUser;
-    }
 
     @Override
     @NeedsValidation(Operation.DB_BROWSE)

@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.controller.v1.implementation;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.controller.v1.schema.UserApi;
 import com.janne6565.stratabackend.model.action.ChangeRoleRequest;
@@ -20,15 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
  * can resolve it for instance-level policies.
  */
 @RestController
+@RequiredArgsConstructor
 public class UserController implements UserApi {
 
     private final UserService userService;
     private final CurrentUser currentUser;
 
-    public UserController(UserService userService, CurrentUser currentUser) {
-        this.userService = userService;
-        this.currentUser = currentUser;
-    }
 
     @Override
     @NeedsValidation(Operation.USER_LIST)

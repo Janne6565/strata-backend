@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.controller.v1.implementation;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.controller.v1.schema.GrantApi;
 import com.janne6565.stratabackend.model.action.CreateGrantRequest;
@@ -13,15 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Implements {@link GrantApi}; each method gated by {@link NeedsValidation}. */
 @RestController
+@RequiredArgsConstructor
 public class GrantController implements GrantApi {
 
     private final GrantService grantService;
     private final CurrentUser currentUser;
 
-    public GrantController(GrantService grantService, CurrentUser currentUser) {
-        this.grantService = grantService;
-        this.currentUser = currentUser;
-    }
 
     @Override
     @NeedsValidation(Operation.GRANT_LIST)

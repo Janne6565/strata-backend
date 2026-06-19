@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.core;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.AccessGrantEntity;
 import com.janne6565.stratabackend.entity.DatasourceEntity;
@@ -24,20 +25,13 @@ import org.springframework.util.StringUtils;
  * DB CHECK/FK constraints are never the first line of defence.
  */
 @Service
+@RequiredArgsConstructor
 public class GrantService {
 
     private final AccessGrantRepository grantRepository;
     private final UserRepository userRepository;
     private final DatasourceRepository datasourceRepository;
 
-    public GrantService(
-            AccessGrantRepository grantRepository,
-            UserRepository userRepository,
-            DatasourceRepository datasourceRepository) {
-        this.grantRepository = grantRepository;
-        this.userRepository = userRepository;
-        this.datasourceRepository = datasourceRepository;
-    }
 
     @Transactional(readOnly = true)
     public List<GrantResponse> listForUser(UUID userId) {

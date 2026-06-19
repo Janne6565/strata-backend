@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.controller.v1.implementation;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.controller.v1.schema.InventoryApi;
 import com.janne6565.stratabackend.model.action.ManualAddRequest;
@@ -16,20 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 /** Implements {@link InventoryApi}; each method gated by {@link NeedsValidation}. */
 @RestController
+@RequiredArgsConstructor
 public class InventoryController implements InventoryApi {
 
     private final CatalogService catalogService;
     private final DiscoveryService discoveryService;
     private final CurrentUser currentUser;
 
-    public InventoryController(
-            CatalogService catalogService,
-            DiscoveryService discoveryService,
-            CurrentUser currentUser) {
-        this.catalogService = catalogService;
-        this.discoveryService = discoveryService;
-        this.currentUser = currentUser;
-    }
 
     @Override
     public List<DatasourceResponse> list() {

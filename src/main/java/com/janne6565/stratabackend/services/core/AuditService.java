@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.core;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.AuditLogEntity;
 import com.janne6565.stratabackend.model.core.AuditOutcome;
@@ -15,15 +16,13 @@ import org.springframework.transaction.annotation.Transactional;
  * truncated and must never contain secret values (AUTH.md).
  */
 @Service
+@RequiredArgsConstructor
 public class AuditService {
 
     private static final int MAX_SUMMARY = 2000;
 
     private final AuditLogRepository repository;
 
-    public AuditService(AuditLogRepository repository) {
-        this.repository = repository;
-    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void record(

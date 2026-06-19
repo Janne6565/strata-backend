@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.discovery;
+import lombok.extern.slf4j.Slf4j;
 
 import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties;
 import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties.Detector;
@@ -18,8 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,10 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
  * manual_overrides); rows not seen this scan become MISSING (never deleted, so the UI can show
  * "gone, last seen …" and grants keep their FK).
  */
+@Slf4j
 @Service
 public class DiscoveryService {
 
-    private static final Logger log = LoggerFactory.getLogger(DiscoveryService.class);
 
     private final KubernetesScanner scanner;
     private final DetectorMatcher detectorMatcher;

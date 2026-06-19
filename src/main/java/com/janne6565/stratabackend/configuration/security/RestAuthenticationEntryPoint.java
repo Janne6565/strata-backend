@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.configuration.security;
+import lombok.RequiredArgsConstructor;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,13 +14,11 @@ import tools.jackson.databind.ObjectMapper;
 
 /** Renders authentication failures on protected routes as a 401 RFC 7807 {@code ProblemDetail}. */
 @Component
+@RequiredArgsConstructor
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
 
-    public RestAuthenticationEntryPoint(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     public void commence(

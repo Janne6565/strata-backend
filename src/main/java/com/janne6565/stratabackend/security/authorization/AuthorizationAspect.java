@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.security.authorization;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.exception.ForbiddenException;
@@ -18,20 +19,13 @@ import org.springframework.stereotype.Component;
  */
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class AuthorizationAspect {
 
     private final CurrentUser currentUser;
     private final ValidatorRegistry validatorRegistry;
     private final ResourceResolver resourceResolver;
 
-    public AuthorizationAspect(
-            CurrentUser currentUser,
-            ValidatorRegistry validatorRegistry,
-            ResourceResolver resourceResolver) {
-        this.currentUser = currentUser;
-        this.validatorRegistry = validatorRegistry;
-        this.resourceResolver = resourceResolver;
-    }
 
     @Before("@annotation(needsValidation)")
     public void authorize(JoinPoint joinPoint, NeedsValidation needsValidation) {

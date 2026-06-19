@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.core;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.DbGroupEntity;
@@ -24,16 +25,12 @@ import org.springframework.transaction.annotation.Transactional;
  * collection operations (list, reorder) to the caller as defence-in-depth.
  */
 @Service
+@RequiredArgsConstructor
 public class GroupService {
 
     private final DbGroupRepository groupRepository;
     private final DatasourceRepository datasourceRepository;
 
-    public GroupService(
-            DbGroupRepository groupRepository, DatasourceRepository datasourceRepository) {
-        this.groupRepository = groupRepository;
-        this.datasourceRepository = datasourceRepository;
-    }
 
     @Transactional(readOnly = true)
     public List<GroupResponse> listForOwner(UserEntity owner) {

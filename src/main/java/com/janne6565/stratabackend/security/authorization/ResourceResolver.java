@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.security.authorization;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.DbGroupEntity;
@@ -16,20 +17,13 @@ import org.springframework.stereotype.Component;
  * resource types become authorization targets (datasources, grants, groups).
  */
 @Component
+@RequiredArgsConstructor
 public class ResourceResolver {
 
     private final UserRepository userRepository;
     private final DatasourceRepository datasourceRepository;
     private final DbGroupRepository groupRepository;
 
-    public ResourceResolver(
-            UserRepository userRepository,
-            DatasourceRepository datasourceRepository,
-            DbGroupRepository groupRepository) {
-        this.userRepository = userRepository;
-        this.datasourceRepository = datasourceRepository;
-        this.groupRepository = groupRepository;
-    }
 
     /** Resolves a reference id (UUID or its string form) to a {@link UserEntity}, or 404s. */
     public UserEntity requireUser(Object referenceId) {

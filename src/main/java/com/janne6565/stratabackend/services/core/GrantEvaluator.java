@@ -1,4 +1,5 @@
 package com.janne6565.stratabackend.services.core;
+import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.configuration.kubernetes.KubernetesProperties;
 import com.janne6565.stratabackend.entity.AccessGrantEntity;
@@ -17,16 +18,12 @@ import org.springframework.stereotype.Component;
  * grant and that prod safe-mode does not apply — the most restrictive rule wins.
  */
 @Component
+@RequiredArgsConstructor
 public class GrantEvaluator {
 
     private final AccessGrantRepository grantRepository;
     private final KubernetesProperties kubernetesProperties;
 
-    public GrantEvaluator(
-            AccessGrantRepository grantRepository, KubernetesProperties kubernetesProperties) {
-        this.grantRepository = grantRepository;
-        this.kubernetesProperties = kubernetesProperties;
-    }
 
     /** Whether the caller may view/browse/read the datasource. */
     public boolean canRead(UserEntity caller, DatasourceEntity datasource) {
