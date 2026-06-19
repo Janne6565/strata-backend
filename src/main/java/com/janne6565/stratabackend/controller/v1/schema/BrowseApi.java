@@ -34,11 +34,13 @@ public interface BrowseApi {
             @RequestParam(defaultValue = "0") int offset,
             @RequestParam(defaultValue = "50") int limit);
 
-    @Operation(summary = "Run a read-only query")
+    // Explicit operationId: the default ("query") would make the generated client emit a
+    // `QueryResult` result-type alias that collides with the QueryResult model import.
+    @Operation(operationId = "runQuery", summary = "Run a read-only query")
     @PostMapping(path = "/query", consumes = MediaType.APPLICATION_JSON_VALUE)
     QueryResult query(@PathVariable UUID id, @Valid @RequestBody QueryRequest request);
 
-    @Operation(summary = "Execute a writing query")
+    @Operation(operationId = "runExecute", summary = "Execute a writing query")
     @PostMapping(path = "/execute", consumes = MediaType.APPLICATION_JSON_VALUE)
     QueryResult execute(@PathVariable UUID id, @Valid @RequestBody QueryRequest request);
 }
