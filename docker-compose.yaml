@@ -1,0 +1,17 @@
+# Local PostgreSQL state DB for development.
+# Matches the defaults in application.yaml (override via STRATA_DB_* env vars).
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: strata-postgres
+    environment:
+      POSTGRES_DB: strata
+      POSTGRES_USER: strata
+      POSTGRES_PASSWORD: strata
+    ports:
+      - "5432:5432"
+    volumes:
+      - strata-pgdata:/var/lib/postgresql/data
+
+volumes:
+  strata-pgdata:

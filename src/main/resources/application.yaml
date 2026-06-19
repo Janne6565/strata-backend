@@ -1,3 +1,38 @@
 spring:
   application:
     name: strata-backend
+  datasource:
+    url: ${STRATA_DB_URL:jdbc:postgresql://localhost:5432/strata}
+    username: ${STRATA_DB_USERNAME:strata}
+    password: ${STRATA_DB_PASSWORD:strata}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Schema is owned by Flyway; Hibernate only validates against it.
+      ddl-auto: validate
+    properties:
+      hibernate.format_sql: true
+  flyway:
+    enabled: true
+
+# Strata application config (bound via @ConfigurationProperties).
+strata:
+  jwt:
+    # DEV ONLY — must be overridden via STRATA_JWT_SECRET in every real environment.
+    secret: ${STRATA_JWT_SECRET:dev-only-insecure-secret-change-me-0123456789}
+    access-token-ttl: PT1H
+    issuer: strata
+  kubernetes:
+    namespace-scope: ALL
+    prod-namespace-patterns:
+      - "*prod*"
+    read-only-safe-mode: true
+  discovery:
+    # Image -> driver detectors (see ARCHITECTURE.md §8). Populated per environment.
+    detectors: []
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
