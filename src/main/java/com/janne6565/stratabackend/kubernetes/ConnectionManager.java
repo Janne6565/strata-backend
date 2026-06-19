@@ -55,14 +55,12 @@ public class ConnectionManager implements ConnectionProvider {
     }
 
     private String jdbcUrl(ConnectionDetails details) {
+        String database = details.database() == null ? "" : details.database();
         return switch (details.driver()) {
             case "postgresql" ->
-                    "jdbc:postgresql://"
-                            + details.host()
-                            + ":"
-                            + details.port()
-                            + "/"
-                            + (details.database() == null ? "" : details.database());
+                    "jdbc:postgresql://" + details.host() + ":" + details.port() + "/" + database;
+            case "mysql" ->
+                    "jdbc:mysql://" + details.host() + ":" + details.port() + "/" + database;
             default ->
                     throw new BadRequestException(
                             "No JDBC URL builder for driver: " + details.driver());
