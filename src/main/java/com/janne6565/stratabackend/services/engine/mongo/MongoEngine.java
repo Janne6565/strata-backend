@@ -29,9 +29,9 @@ import org.springframework.stereotype.Component;
  * MongoDB adapter (ARCHITECTURE.md §9). Collections map onto the table abstraction: introspection
  * lists collections and infers columns from a sample document; browse pages a collection; queries
  * are database commands ({@code db.runCommand}) supplied as JSON. In {@link QueryMode#READ} only a
- * whitelist of read commands is permitted and aggregation write stages ({@code $out}/{@code $merge})
- * are rejected — the engine's read-only enforcement (AUTH.md, defence-in-depth). Clients are cached
- * per endpoint; resolved credentials live only in the connection string, in memory.
+ * whitelist of read commands is permitted and aggregation write stages ({@code $out}/{@code
+ * $merge}) are rejected — the engine's read-only enforcement (AUTH.md, defence-in-depth). Clients
+ * are cached per endpoint; resolved credentials live only in the connection string, in memory.
  */
 @Component
 public class MongoEngine implements DatabaseEngine {
@@ -124,7 +124,8 @@ public class MongoEngine implements DatabaseEngine {
         if (name.equalsIgnoreCase("aggregate")) {
             List<?> pipeline = command.getList("pipeline", Object.class, List.of());
             for (Object stage : pipeline) {
-                if (stage instanceof Document d && (d.containsKey("$out") || d.containsKey("$merge"))) {
+                if (stage instanceof Document d
+                        && (d.containsKey("$out") || d.containsKey("$merge"))) {
                     throw new EngineException(
                             "Aggregation write stages are not permitted in read-only mode");
                 }
@@ -190,7 +191,10 @@ public class MongoEngine implements DatabaseEngine {
 
     /** Coerces a BSON value into a JSON-serialisable cell. */
     private Object cell(Object value) {
-        if (value == null || value instanceof Number || value instanceof Boolean || value instanceof String) {
+        if (value == null
+                || value instanceof Number
+                || value instanceof Boolean
+                || value instanceof String) {
             return value;
         }
         if (value instanceof Document document) {

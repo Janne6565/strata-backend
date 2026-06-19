@@ -18,12 +18,14 @@ public class GrantPolicies {
     }
 
     @Validates(Operation.GRANT_CREATE)
-    public boolean canCreateGrant(ResourceResolver resolver, Object referenceId, UserEntity caller) {
+    public boolean canCreateGrant(
+            ResourceResolver resolver, Object referenceId, UserEntity caller) {
         return isAdmin(caller);
     }
 
     @Validates(Operation.GRANT_REVOKE)
-    public boolean canRevokeGrant(ResourceResolver resolver, Object referenceId, UserEntity caller) {
+    public boolean canRevokeGrant(
+            ResourceResolver resolver, Object referenceId, UserEntity caller) {
         return isAdmin(caller);
     }
 

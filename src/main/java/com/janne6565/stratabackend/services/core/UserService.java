@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.services.core;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.action.CreateUserRequest;
@@ -11,13 +10,14 @@ import com.janne6565.stratabackend.model.exception.NotFoundException;
 import com.janne6565.stratabackend.repository.UserRepository;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * UserEntity-management operations for admins. Enforces the cross-cutting invariant that at least one
- * {@code OWNER} always exists (AUTH.md): the last owner can be neither demoted nor deleted, and
+ * UserEntity-management operations for admins. Enforces the cross-cutting invariant that at least
+ * one {@code OWNER} always exists (AUTH.md): the last owner can be neither demoted nor deleted, and
  * a user cannot delete themselves.
  */
 @Service
@@ -26,7 +26,6 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
 
     @Transactional(readOnly = true)
     public List<UserResponse> list() {

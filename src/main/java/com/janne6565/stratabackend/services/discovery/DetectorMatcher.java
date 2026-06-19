@@ -15,8 +15,8 @@ import org.springframework.stereotype.Component;
 /**
  * Matches a workload's container image against the configured detectors and scores the confidence
  * (ARCHITECTURE.md §8). Regexes are compiled once at startup so a malformed detector pattern fails
- * fast rather than per request. When several detectors match, the highest-confidence one wins
- * (ties broken by config order).
+ * fast rather than per request. When several detectors match, the highest-confidence one wins (ties
+ * broken by config order).
  */
 @Component
 public class DetectorMatcher {
@@ -68,7 +68,10 @@ public class DetectorMatcher {
                         ports);
             } catch (PatternSyntaxException ex) {
                 throw new IllegalStateException(
-                        "Invalid image regex in detector '" + detector.id() + "': " + ex.getMessage(),
+                        "Invalid image regex in detector '"
+                                + detector.id()
+                                + "': "
+                                + ex.getMessage(),
                         ex);
             }
         }

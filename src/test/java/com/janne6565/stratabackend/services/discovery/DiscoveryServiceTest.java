@@ -1,9 +1,15 @@
 package com.janne6565.stratabackend.services.discovery;
-import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties.Detector;
-import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties.Match;
-import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties.Credentials;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties;
+import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties.Credentials;
+import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties.Detector;
+import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties.Match;
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.model.core.DatasourceOrigin;
 import com.janne6565.stratabackend.model.core.DatasourceStatus;
@@ -25,11 +31,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class DiscoveryServiceTest {
@@ -48,7 +49,8 @@ class DiscoveryServiceTest {
                                         "pg",
                                         "postgresql",
                                         new Match("postgres", List.of(5432)),
-                                        new Credentials("pg", Map.of("password", "PGPASSWORD"), null))));
+                                        new Credentials(
+                                                "pg", Map.of("password", "PGPASSWORD"), null))));
         service =
                 new DiscoveryService(
                         scanner,
@@ -70,7 +72,14 @@ class DiscoveryServiceTest {
                         .endEnv()
                         .build();
         return new WorkloadDescriptor(
-                "default", "Deployment", name, "postgres:17", List.of(5432), container, name + "-svc", 5432);
+                "default",
+                "Deployment",
+                name,
+                "postgres:17",
+                List.of(5432),
+                container,
+                name + "-svc",
+                5432);
     }
 
     private DatasourceEntity stale(String discoveryKey, DatasourceStatus status) {
@@ -117,7 +126,14 @@ class DiscoveryServiceTest {
                 .thenReturn(
                         List.of(
                                 new WorkloadDescriptor(
-                                        "default", "Deployment", "cache", "redis:7", List.of(6379), redis, null, null)));
+                                        "default",
+                                        "Deployment",
+                                        "cache",
+                                        "redis:7",
+                                        List.of(6379),
+                                        redis,
+                                        null,
+                                        null)));
         when(datasourceRepository.findAll()).thenReturn(List.of());
 
         DiscoverySummary summary = service.rescan();

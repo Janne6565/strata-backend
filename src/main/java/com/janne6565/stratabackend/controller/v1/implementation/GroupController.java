@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.controller.v1.implementation;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.controller.v1.schema.GroupApi;
 import com.janne6565.stratabackend.model.action.AddMemberRequest;
@@ -14,6 +13,7 @@ import com.janne6565.stratabackend.services.auth.CurrentUser;
 import com.janne6565.stratabackend.services.core.GroupService;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -27,7 +27,6 @@ public class GroupController implements GroupApi {
 
     private final GroupService groupService;
     private final CurrentUser currentUser;
-
 
     @Override
     @NeedsValidation(Operation.GROUP_LIST)

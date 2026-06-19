@@ -1,13 +1,11 @@
 package com.janne6565.stratabackend.model.core;
 
-
 /**
  * How a single credential field resolves. {@code name}/{@code key} point at the backing
  * Secret/ConfigMap (null for LITERAL/UNRESOLVED). The actual value is read live and never stored
  * here (AUTH.md).
  */
-public record CredentialSource(
-        String field, CredentialSourceType type, String name, String key) {
+public record CredentialSource(String field, CredentialSourceType type, String name, String key) {
 
     public static CredentialSource literal(String field) {
         return new CredentialSource(field, CredentialSourceType.LITERAL, null, null);

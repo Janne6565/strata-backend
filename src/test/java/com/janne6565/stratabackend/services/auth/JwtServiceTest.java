@@ -1,5 +1,8 @@
 package com.janne6565.stratabackend.services.auth;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.janne6565.stratabackend.configuration.security.JwtProperties;
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.core.Role;
@@ -7,8 +10,6 @@ import com.janne6565.stratabackend.model.exception.UnauthorizedException;
 import java.time.Duration;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Pure-JVM tests for token issuing/verification (no Spring context, no Docker). */
 class JwtServiceTest {

@@ -1,14 +1,15 @@
 package com.janne6565.stratabackend.security.authorization;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.core.Role;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /** Verifies fail-fast wiring and the policy decisions, without a Spring context or Docker. */
 class ValidatorRegistryTest {
@@ -27,7 +28,8 @@ class ValidatorRegistryTest {
 
     @Test
     void wiresEveryOperationWhenAllPoliciesPresent() {
-        ValidatorRegistry registry = registryWith(
+        ValidatorRegistry registry =
+                registryWith(
                         new UserPolicies(),
                         new GrantPolicies(),
                         new GroupPolicies(),
@@ -48,7 +50,8 @@ class ValidatorRegistryTest {
 
     @Test
     void adminPassesAndPlainUserFailsUserListPolicy() {
-        ValidatorRegistry registry = registryWith(
+        ValidatorRegistry registry =
+                registryWith(
                         new UserPolicies(),
                         new GrantPolicies(),
                         new GroupPolicies(),

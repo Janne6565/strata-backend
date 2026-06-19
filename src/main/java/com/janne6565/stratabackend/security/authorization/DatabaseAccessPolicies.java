@@ -1,9 +1,9 @@
 package com.janne6565.stratabackend.security.authorization;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.services.core.GrantEvaluator;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 public class DatabaseAccessPolicies {
 
     private final GrantEvaluator grantEvaluator;
-
 
     @Validates(Operation.DB_VIEW)
     public boolean canView(ResourceResolver resolver, Object referenceId, UserEntity caller) {

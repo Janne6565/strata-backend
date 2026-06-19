@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.controller.v1.implementation;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.controller.v1.schema.BrowseApi;
 import com.janne6565.stratabackend.model.action.QueryRequest;
@@ -13,6 +12,7 @@ import com.janne6565.stratabackend.security.authorization.ResourceId;
 import com.janne6565.stratabackend.services.auth.CurrentUser;
 import com.janne6565.stratabackend.services.engine.BrowseService;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -27,7 +27,6 @@ public class BrowseController implements BrowseApi {
     private final BrowseService browseService;
     private final CurrentUser currentUser;
 
-
     @Override
     @NeedsValidation(Operation.DB_BROWSE)
     public SchemaInfo schema(@ResourceId UUID id) {
@@ -36,8 +35,7 @@ public class BrowseController implements BrowseApi {
 
     @Override
     @NeedsValidation(Operation.DB_BROWSE)
-    public RowPage browse(
-            @ResourceId UUID id, String schema, String table, int offset, int limit) {
+    public RowPage browse(@ResourceId UUID id, String schema, String table, int offset, int limit) {
         return browseService.browse(id, schema, table, offset, limit, currentUser.require());
     }
 

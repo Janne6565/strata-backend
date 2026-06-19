@@ -4,9 +4,9 @@ import com.janne6565.stratabackend.controller.ExceptionController;
 import org.springframework.http.HttpStatus;
 
 /**
- * Base type for all application exceptions. Carries the HTTP status to surface; the
- * {@link ExceptionController} renders it as an RFC 7807 {@code ProblemDetail}. Subclasses
- * keep call sites intent-revealing ({@code throw new ForbiddenException(...)}).
+ * Base type for all application exceptions. Carries the HTTP status to surface; the {@link
+ * ExceptionController} renders it as an RFC 7807 {@code ProblemDetail}. Subclasses keep call sites
+ * intent-revealing ({@code throw new ForbiddenException(...)}).
  */
 public abstract class BaseException extends RuntimeException {
 

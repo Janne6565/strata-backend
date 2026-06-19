@@ -1,7 +1,10 @@
 package com.janne6565.stratabackend.services.core;
-import com.janne6565.stratabackend.configuration.kubernetes.KubernetesProperties.NamespaceScope;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import com.janne6565.stratabackend.configuration.kubernetes.KubernetesProperties;
+import com.janne6565.stratabackend.configuration.kubernetes.KubernetesProperties.NamespaceScope;
 import com.janne6565.stratabackend.entity.AccessGrantEntity;
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
@@ -14,8 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GrantEvaluatorTest {
@@ -55,7 +56,10 @@ class GrantEvaluatorTest {
         UserEntity user = user(Role.USER);
         DatasourceEntity ds = datasource("default");
         when(grantRepository.findByUserId(user.getId()))
-                .thenReturn(List.of(new AccessGrantEntity(user, ScopeType.NAMESPACE, "default", null, false, null)));
+                .thenReturn(
+                        List.of(
+                                new AccessGrantEntity(
+                                        user, ScopeType.NAMESPACE, "default", null, false, null)));
 
         assertThat(evaluator.canRead(user, ds)).isTrue();
         assertThat(evaluator.canWrite(user, ds)).isTrue();
@@ -67,7 +71,10 @@ class GrantEvaluatorTest {
         UserEntity user = user(Role.USER);
         DatasourceEntity ds = datasource("default");
         when(grantRepository.findByUserId(user.getId()))
-                .thenReturn(List.of(new AccessGrantEntity(user, ScopeType.DATABASE, null, ds, true, null)));
+                .thenReturn(
+                        List.of(
+                                new AccessGrantEntity(
+                                        user, ScopeType.DATABASE, null, ds, true, null)));
 
         assertThat(evaluator.canRead(user, ds)).isTrue();
         assertThat(evaluator.canWrite(user, ds)).isFalse();

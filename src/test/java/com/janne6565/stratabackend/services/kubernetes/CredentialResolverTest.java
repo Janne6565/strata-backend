@@ -1,5 +1,7 @@
 package com.janne6565.stratabackend.services.kubernetes;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.janne6565.stratabackend.model.core.CredentialResolution;
 import com.janne6565.stratabackend.model.core.CredentialSource;
 import com.janne6565.stratabackend.model.core.CredentialSourceType;
@@ -11,7 +13,6 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
 
 class CredentialResolverTest {
 
@@ -24,7 +25,8 @@ class CredentialResolverTest {
                 .orElseThrow();
     }
 
-    private Container container(java.util.List<EnvVar> env, io.fabric8.kubernetes.api.model.EnvFromSource... envFrom) {
+    private Container container(
+            java.util.List<EnvVar> env, io.fabric8.kubernetes.api.model.EnvFromSource... envFrom) {
         return new ContainerBuilder().withName("db").withEnv(env).withEnvFrom(envFrom).build();
     }
 
@@ -52,9 +54,11 @@ class CredentialResolverTest {
         mapping.put("database", "PGDATABASE");
 
         CredentialResolution resolution =
-                resolver.resolve(container(java.util.List.of(literal, secretRef, configRef)), mapping, "pg");
+                resolver.resolve(
+                        container(java.util.List.of(literal, secretRef, configRef)), mapping, "pg");
 
-        assertThat(sourceFor(resolution, "username").type()).isEqualTo(CredentialSourceType.LITERAL);
+        assertThat(sourceFor(resolution, "username").type())
+                .isEqualTo(CredentialSourceType.LITERAL);
 
         CredentialSource password = sourceFor(resolution, "password");
         assertThat(password.type()).isEqualTo(CredentialSourceType.SECRET);
@@ -79,7 +83,9 @@ class CredentialResolverTest {
 
         CredentialResolution resolution =
                 resolver.resolve(
-                        container(java.util.List.of(), envFrom), Map.of("password", "DB_PASSWORD"), "pg");
+                        container(java.util.List.of(), envFrom),
+                        Map.of("password", "DB_PASSWORD"),
+                        "pg");
 
         CredentialSource password = sourceFor(resolution, "password");
         assertThat(password.type()).isEqualTo(CredentialSourceType.SECRET);

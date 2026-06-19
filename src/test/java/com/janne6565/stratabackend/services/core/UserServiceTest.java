@@ -1,5 +1,12 @@
 package com.janne6565.stratabackend.services.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.action.CreateUserRequest;
 import com.janne6565.stratabackend.model.core.Role;
@@ -15,12 +22,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -34,7 +35,9 @@ class UserServiceTest {
         when(userRepository.existsByUsername("alice")).thenReturn(true);
 
         assertThatThrownBy(
-                        () -> userService.create(new CreateUserRequest("alice", "password1", Role.USER)))
+                        () ->
+                                userService.create(
+                                        new CreateUserRequest("alice", "password1", Role.USER)))
                 .isInstanceOf(ConflictException.class);
         verify(userRepository, never()).save(any());
     }

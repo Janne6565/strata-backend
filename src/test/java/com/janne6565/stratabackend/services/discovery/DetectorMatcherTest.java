@@ -1,5 +1,7 @@
 package com.janne6565.stratabackend.services.discovery;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties;
 import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties.Detector;
 import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties.Match;
@@ -7,7 +9,6 @@ import com.janne6565.stratabackend.model.core.Confidence;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
 
 class DetectorMatcherTest {
 

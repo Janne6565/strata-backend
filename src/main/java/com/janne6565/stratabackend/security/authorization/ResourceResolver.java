@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.security.authorization;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.DbGroupEntity;
@@ -9,6 +8,7 @@ import com.janne6565.stratabackend.repository.DatasourceRepository;
 import com.janne6565.stratabackend.repository.DbGroupRepository;
 import com.janne6565.stratabackend.repository.UserRepository;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,7 +23,6 @@ public class ResourceResolver {
     private final UserRepository userRepository;
     private final DatasourceRepository datasourceRepository;
     private final DbGroupRepository groupRepository;
-
 
     /** Resolves a reference id (UUID or its string form) to a {@link UserEntity}, or 404s. */
     public UserEntity requireUser(Object referenceId) {

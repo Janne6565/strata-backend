@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
  * §7). The controller implements it; mappings and docs live here.
  */
 @Tag(name = "Authentication")
-@RequestMapping(path = "/api/auth", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/v1/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 public interface AuthApi {
 
     @Operation(summary = "Authenticate with username/password and receive an access token")

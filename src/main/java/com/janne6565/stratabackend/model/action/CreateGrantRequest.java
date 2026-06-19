@@ -6,7 +6,8 @@ import java.util.UUID;
 
 /**
  * Request to grant a user access to a scope. For {@code NAMESPACE} grants supply {@code namespace};
- * for {@code DATABASE} grants supply {@code datasourceId}. Scope consistency is validated server-side.
+ * for {@code DATABASE} grants supply {@code datasourceId}. Scope consistency is validated
+ * server-side.
  */
 public record CreateGrantRequest(
         @NotNull UUID userId,

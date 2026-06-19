@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.services.engine;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
@@ -15,6 +14,7 @@ import com.janne6565.stratabackend.model.exception.NotFoundException;
 import com.janne6565.stratabackend.repository.DatasourceRepository;
 import com.janne6565.stratabackend.services.core.AuditService;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
@@ -33,7 +33,6 @@ public class BrowseService {
     private final DatasourceRepository datasourceRepository;
     private final AuditService auditService;
 
-
     public SchemaInfo schema(UUID datasourceId) {
         DatasourceEntity datasource = require(datasourceId);
         DatabaseEngine engine = engineRegistry.forDriver(datasource.getDriver());
@@ -42,14 +41,20 @@ public class BrowseService {
     }
 
     public RowPage browse(
-            UUID datasourceId, String schema, String table, int offset, int limit, UserEntity caller) {
+            UUID datasourceId,
+            String schema,
+            String table,
+            int offset,
+            int limit,
+            UserEntity caller) {
         DatasourceEntity datasource = require(datasourceId);
         DatabaseEngine engine = engineRegistry.forDriver(datasource.getDriver());
         ConnectionDetails details = connectionDetailsResolver.resolve(datasource);
         int cappedLimit = Math.min(Math.max(limit, 0), MAX_BROWSE_LIMIT);
         String target = schema + "." + table;
         try {
-            RowPage page = engine.browse(details, new ObjectRef(schema, table), offset, cappedLimit);
+            RowPage page =
+                    engine.browse(details, new ObjectRef(schema, table), offset, cappedLimit);
             audit(caller, datasource, "DB_BROWSE", target, AuditOutcome.SUCCESS, null);
             return page;
         } catch (EngineException ex) {
@@ -65,10 +70,22 @@ public class BrowseService {
         String operation = mode == QueryMode.WRITE ? "DB_QUERY_WRITE" : "DB_QUERY_READ";
         try {
             QueryResult result = engine.runQuery(details, sql, mode);
-            audit(caller, datasource, operation, datasource.getDisplayName(), AuditOutcome.SUCCESS, sql);
+            audit(
+                    caller,
+                    datasource,
+                    operation,
+                    datasource.getDisplayName(),
+                    AuditOutcome.SUCCESS,
+                    sql);
             return result;
         } catch (EngineException ex) {
-            audit(caller, datasource, operation, datasource.getDisplayName(), AuditOutcome.FAILURE, sql);
+            audit(
+                    caller,
+                    datasource,
+                    operation,
+                    datasource.getDisplayName(),
+                    AuditOutcome.FAILURE,
+                    sql);
             throw ex;
         }
     }

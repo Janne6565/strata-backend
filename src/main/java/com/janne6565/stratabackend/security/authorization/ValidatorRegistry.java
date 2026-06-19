@@ -1,12 +1,12 @@
 package com.janne6565.stratabackend.security.authorization;
-import lombok.extern.slf4j.Slf4j;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.UserEntity;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.EnumMap;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
@@ -24,10 +24,8 @@ import org.springframework.util.ReflectionUtils;
 @RequiredArgsConstructor
 public class ValidatorRegistry implements SmartInitializingSingleton {
 
-
     private final ApplicationContext applicationContext;
     private final Map<Operation, Validator> validators = new EnumMap<>(Operation.class);
-
 
     @Override
     public void afterSingletonsInstantiated() {
@@ -87,12 +85,14 @@ public class ValidatorRegistry implements SmartInitializingSingleton {
             throw new IllegalStateException("No validator for operation " + operation);
         }
         try {
-            return (boolean) validator.method().invoke(validator.bean(), resolver, referenceId, user);
+            return (boolean)
+                    validator.method().invoke(validator.bean(), resolver, referenceId, user);
         } catch (InvocationTargetException ex) {
             if (ex.getCause() instanceof RuntimeException runtime) {
                 throw runtime;
             }
-            throw new IllegalStateException("Policy invocation failed for " + operation, ex.getCause());
+            throw new IllegalStateException(
+                    "Policy invocation failed for " + operation, ex.getCause());
         } catch (IllegalAccessException ex) {
             throw new IllegalStateException("Policy not accessible for " + operation, ex);
         }

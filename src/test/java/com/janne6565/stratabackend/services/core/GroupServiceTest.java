@@ -1,5 +1,11 @@
 package com.janne6565.stratabackend.services.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.janne6565.stratabackend.entity.DbGroupEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.action.CreateGroupRequest;
@@ -15,11 +21,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /** Unit tests for the group service: creation, membership and reorder, with mocked repositories. */
 class GroupServiceTest {

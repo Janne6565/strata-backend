@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.security.jwtfilter;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.repository.UserRepository;
@@ -11,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -21,8 +21,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * Reads the {@code Authorization: Bearer <jwt>} header, verifies it, loads the (enabled) user and
- * populates the {@link SecurityContextHolder}. All authentication lives here — never in services
- * or controllers (AUTH.md). A missing or invalid token leaves the context anonymous; the security
+ * populates the {@link SecurityContextHolder}. All authentication lives here — never in services or
+ * controllers (AUTH.md). A missing or invalid token leaves the context anonymous; the security
  * chain then rejects protected endpoints via the entry point.
  */
 @Component
@@ -33,7 +33,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
-
 
     @Override
     protected void doFilterInternal(
@@ -59,7 +58,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 .filter(UserEntity::isEnabled)
                 .ifPresent(
                         user -> {
-                            var authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
+                            var authority =
+                                    new SimpleGrantedAuthority("ROLE_" + user.getRole().name());
                             var authentication =
                                     new UsernamePasswordAuthenticationToken(
                                             user, null, List.of(authority));

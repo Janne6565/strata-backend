@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 /** Admin grant-management contract. Authorization is enforced on the controller implementation. */
 @Tag(name = "Grants")
-@RequestMapping(path = "/api/grants", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/v1/grants", produces = MediaType.APPLICATION_JSON_VALUE)
 public interface GrantApi {
 
     @Operation(summary = "List a user's access grants")

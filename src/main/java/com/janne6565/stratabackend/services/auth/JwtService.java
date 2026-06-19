@@ -17,8 +17,8 @@ import org.springframework.stereotype.Service;
 
 /**
  * Issues and verifies the application's self-signed access tokens (HMAC-SHA256). Stateless: the
- * subject is the user id; {@code username}/{@code role} are carried as convenience claims, but
- * the {@link JwtAuthenticationFilter} always reloads the user to honour current state.
+ * subject is the user id; {@code username}/{@code role} are carried as convenience claims, but the
+ * {@link JwtAuthenticationFilter} always reloads the user to honour current state.
  */
 @Service
 public class JwtService {

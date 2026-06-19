@@ -1,9 +1,8 @@
 package com.janne6565.stratabackend.model.core;
 
-
 /**
- * Fixed role hierarchy (see ARCHITECTURE.md §6): {@code OWNER} ▸ {@code ADMIN} ▸ {@code USER}.
- * A higher role implicitly satisfies any lower one via {@link #isAtLeast(Role)}.
+ * Fixed role hierarchy (see ARCHITECTURE.md §6): {@code OWNER} ▸ {@code ADMIN} ▸ {@code USER}. A
+ * higher role implicitly satisfies any lower one via {@link #isAtLeast(Role)}.
  */
 public enum Role {
     USER,

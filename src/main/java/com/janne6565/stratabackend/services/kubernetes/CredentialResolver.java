@@ -14,9 +14,9 @@ import org.springframework.stereotype.Component;
 /**
  * Walks a container's environment to determine where each credential field comes from, in
  * Kubernetes precedence (ARCHITECTURE.md §8): {@code env[].value} ▸ {@code env[].valueFrom}
- * (secret/configmap key) ▸ {@code envFrom[]} (secret/configmap, honouring {@code prefix}).
- * Produces a {@link CredentialResolution} of pointers only — actual secret values are read live
- * at connection time, never here (AUTH.md).
+ * (secret/configmap key) ▸ {@code envFrom[]} (secret/configmap, honouring {@code prefix}). Produces
+ * a {@link CredentialResolution} of pointers only — actual secret values are read live at
+ * connection time, never here (AUTH.md).
  */
 @Component
 public class CredentialResolver {
@@ -34,8 +34,7 @@ public class CredentialResolver {
 
         List<CredentialSource> sources = new ArrayList<>();
         fieldToEnvVar.forEach(
-                (field, envVarName) ->
-                        sources.add(resolveField(field, envVarName, env, envFrom)));
+                (field, envVarName) -> sources.add(resolveField(field, envVarName, env, envFrom)));
         return new CredentialResolution(strategy, sources);
     }
 

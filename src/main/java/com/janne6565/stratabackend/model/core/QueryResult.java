@@ -3,9 +3,8 @@ package com.janne6565.stratabackend.model.core;
 import java.util.List;
 
 /**
- * The result of running a query. A SELECT yields {@code columns} + {@code rows} and
- * {@code updateCount = -1}; a write yields an empty result set and the affected-row
- * {@code updateCount}.
+ * The result of running a query. A SELECT yields {@code columns} + {@code rows} and {@code
+ * updateCount = -1}; a write yields an empty result set and the affected-row {@code updateCount}.
  */
 public record QueryResult(List<String> columns, List<List<Object>> rows, int updateCount) {
 

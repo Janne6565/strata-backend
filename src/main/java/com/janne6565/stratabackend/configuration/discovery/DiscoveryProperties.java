@@ -7,9 +7,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 /**
- * Auto-discovery detector rules (see ARCHITECTURE.md §8). Bound from {@code strata.discovery}.
- * A driver declares which credential fields it needs; a detector maps an image to a driver and
- * names where each field's value comes from (env var, or an explicit secret + key).
+ * Auto-discovery detector rules (see ARCHITECTURE.md §8). Bound from {@code strata.discovery}. A
+ * driver declares which credential fields it needs; a detector maps an image to a driver and names
+ * where each field's value comes from (env var, or an explicit secret + key).
  */
 @Validated
 @ConfigurationProperties("strata.discovery")

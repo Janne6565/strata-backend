@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.services.discovery;
-import lombok.extern.slf4j.Slf4j;
 
 import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties;
 import com.janne6565.stratabackend.configuration.discovery.DiscoveryProperties.Detector;
@@ -19,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 public class DiscoveryService {
-
 
     private final KubernetesScanner scanner;
     private final DetectorMatcher detectorMatcher;
@@ -62,7 +61,8 @@ public class DiscoveryService {
         int updated = 0;
 
         for (WorkloadDescriptor workload : scanner.scan()) {
-            Optional<DetectorMatch> matched = detectorMatcher.match(workload.image(), workload.ports());
+            Optional<DetectorMatch> matched =
+                    detectorMatcher.match(workload.image(), workload.ports());
             if (matched.isEmpty()) {
                 continue;
             }
@@ -91,7 +91,8 @@ public class DiscoveryService {
         return new DiscoverySummary(created, updated, markedMissing, seen.size());
     }
 
-    private CredentialResolution resolveCredentials(DetectorMatch match, WorkloadDescriptor workload) {
+    private CredentialResolution resolveCredentials(
+            DetectorMatch match, WorkloadDescriptor workload) {
         Detector detector = detectorsById.get(match.detectorId());
         if (detector == null
                 || detector.credentials() == null
@@ -159,11 +160,14 @@ public class DiscoveryService {
         }
     }
 
-    /** Any catalog row not matched this scan is marked MISSING (rows are retained, never deleted). */
+    /**
+     * Any catalog row not matched this scan is marked MISSING (rows are retained, never deleted).
+     */
     private int markMissing(Set<String> seen) {
         int count = 0;
         for (DatasourceEntity ds : datasourceRepository.findAll()) {
-            if (!seen.contains(ds.getDiscoveryKey()) && ds.getStatus() != DatasourceStatus.MISSING) {
+            if (!seen.contains(ds.getDiscoveryKey())
+                    && ds.getStatus() != DatasourceStatus.MISSING) {
                 ds.setStatus(DatasourceStatus.MISSING);
                 count++;
             }

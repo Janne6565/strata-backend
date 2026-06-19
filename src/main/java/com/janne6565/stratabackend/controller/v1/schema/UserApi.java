@@ -3,7 +3,6 @@ package com.janne6565.stratabackend.controller.v1.schema;
 import com.janne6565.stratabackend.model.action.ChangeRoleRequest;
 import com.janne6565.stratabackend.model.action.CreateUserRequest;
 import com.janne6565.stratabackend.model.core.UserResponse;
-import com.janne6565.stratabackend.security.authorization.NeedsValidation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,12 +20,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
- * Admin user-management contract (API-first; see {@link AuthApi}). Authorization is enforced on
- * the controller implementation via {@code @NeedsValidation}, not here — Spring AOP only sees
+ * Admin user-management contract (API-first; see {@link AuthApi}). Authorization is enforced on the
+ * controller implementation via {@code @NeedsValidation}, not here — Spring AOP only sees
  * annotations on the invoked (implementation) method.
  */
 @Tag(name = "Users")
-@RequestMapping(path = "/api/users", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/v1/users", produces = MediaType.APPLICATION_JSON_VALUE)
 public interface UserApi {
 
     @Operation(summary = "List all users")

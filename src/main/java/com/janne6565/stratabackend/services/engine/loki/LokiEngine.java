@@ -81,7 +81,8 @@ public class LokiEngine implements DatabaseEngine {
                 throw new EngineException("Loki has no labels to browse");
             }
             String selector = "{" + labels.get(0) + "=~\".+\"}";
-            List<Entry> entries = queryRange(details, selector, Math.max(0, offset) + Math.max(0, limit));
+            List<Entry> entries =
+                    queryRange(details, selector, Math.max(0, offset) + Math.max(0, limit));
             int from = Math.min(Math.max(0, offset), entries.size());
             int to = Math.min(from + Math.max(0, limit), entries.size());
             return toPage(entries.subList(from, to), offset, limit);
@@ -186,13 +187,18 @@ public class LokiEngine implements DatabaseEngine {
                         .timeout(Duration.ofSeconds(15));
         if (details.username() != null && !details.username().isBlank()) {
             String token =
-                    details.username() + ":" + (details.password() == null ? "" : details.password());
+                    details.username()
+                            + ":"
+                            + (details.password() == null ? "" : details.password());
             request.header(
                     "Authorization",
-                    "Basic " + Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8)));
+                    "Basic "
+                            + Base64.getEncoder()
+                                    .encodeToString(token.getBytes(StandardCharsets.UTF_8)));
         }
         try {
-            HttpResponse<String> response = http.send(request.build(), HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response =
+                    http.send(request.build(), HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
                 throw new EngineException("Loki returned HTTP " + response.statusCode());
             }

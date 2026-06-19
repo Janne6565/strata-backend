@@ -1,6 +1,5 @@
 package com.janne6565.stratabackend.controller.v1.schema;
 
-import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.model.action.ManualAddRequest;
 import com.janne6565.stratabackend.model.core.DatasourceResponse;
 import com.janne6565.stratabackend.model.core.DiscoverySummary;
@@ -19,9 +18,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-/** DatasourceEntity inventory + discovery contract. Authorization enforced on the implementation. */
+/**
+ * DatasourceEntity inventory + discovery contract. Authorization enforced on the implementation.
+ */
 @Tag(name = "Inventory")
-@RequestMapping(path = "/api/datasources", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/v1/datasources", produces = MediaType.APPLICATION_JSON_VALUE)
 public interface InventoryApi {
 
     @Operation(summary = "List all known datasources (discovered + manual)")

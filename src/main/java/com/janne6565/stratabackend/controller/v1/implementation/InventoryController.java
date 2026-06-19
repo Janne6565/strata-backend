@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.controller.v1.implementation;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.controller.v1.schema.InventoryApi;
 import com.janne6565.stratabackend.model.action.ManualAddRequest;
@@ -13,6 +12,7 @@ import com.janne6565.stratabackend.services.core.CatalogService;
 import com.janne6565.stratabackend.services.discovery.DiscoveryService;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Implements {@link InventoryApi}; each method gated by {@link NeedsValidation}. */
@@ -24,10 +24,10 @@ public class InventoryController implements InventoryApi {
     private final DiscoveryService discoveryService;
     private final CurrentUser currentUser;
 
-
     @Override
     public List<DatasourceResponse> list() {
-        // Collection endpoint: any authenticated caller; results are scoped to grants in the service
+        // Collection endpoint: any authenticated caller; results are scoped to grants in the
+        // service
         // layer (enforcement layer 2), so no single-resource @NeedsValidation gate here.
         return catalogService.list(currentUser.require());
     }

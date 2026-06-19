@@ -47,10 +47,35 @@ public class RedisEngine implements DatabaseEngine {
     /** Non-mutating commands permitted in read-only mode (lower-cased). */
     private static final Set<String> READ_COMMANDS =
             Set.of(
-                    "get", "mget", "strlen", "getrange", "exists", "type", "ttl", "pttl", "keys",
-                    "scan", "hget", "hgetall", "hkeys", "hvals", "hlen", "hmget", "lrange", "llen",
-                    "lindex", "smembers", "scard", "sismember", "zrange", "zcard", "zscore",
-                    "dbsize", "randomkey", "object", "memory");
+                    "get",
+                    "mget",
+                    "strlen",
+                    "getrange",
+                    "exists",
+                    "type",
+                    "ttl",
+                    "pttl",
+                    "keys",
+                    "scan",
+                    "hget",
+                    "hgetall",
+                    "hkeys",
+                    "hvals",
+                    "hlen",
+                    "hmget",
+                    "lrange",
+                    "llen",
+                    "lindex",
+                    "smembers",
+                    "scard",
+                    "sismember",
+                    "zrange",
+                    "zcard",
+                    "zscore",
+                    "dbsize",
+                    "randomkey",
+                    "object",
+                    "memory");
 
     private final Map<String, RedisClient> clients = new ConcurrentHashMap<>();
     private final Map<String, StatefulRedisConnection<String, String>> connections =
@@ -117,7 +142,8 @@ public class RedisEngine implements DatabaseEngine {
             for (int i = 1; i < tokens.size(); i++) {
                 args.add(tokens.get(i));
             }
-            List<Object> reply = sync.dispatch(keyword(name), new NestedMultiOutput<>(StringCodec.UTF8), args);
+            List<Object> reply =
+                    sync.dispatch(keyword(name), new NestedMultiOutput<>(StringCodec.UTF8), args);
             return render(reply);
         } catch (EngineException ex) {
             throw ex;
@@ -201,7 +227,8 @@ public class RedisEngine implements DatabaseEngine {
         boolean hasPassword = details.password() != null && !details.password().isBlank();
         if (details.username() != null && !details.username().isBlank()) {
             builder.withAuthentication(
-                    details.username(), hasPassword ? details.password().toCharArray() : new char[0]);
+                    details.username(),
+                    hasPassword ? details.password().toCharArray() : new char[0]);
         } else if (hasPassword) {
             builder.withPassword(details.password().toCharArray());
         }

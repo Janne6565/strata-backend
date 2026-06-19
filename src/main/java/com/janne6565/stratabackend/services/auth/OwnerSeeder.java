@@ -1,11 +1,11 @@
 package com.janne6565.stratabackend.services.auth;
-import lombok.extern.slf4j.Slf4j;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.configuration.security.AuthProperties;
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.core.Role;
 import com.janne6565.stratabackend.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,11 +22,9 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class OwnerSeeder implements ApplicationRunner {
 
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthProperties authProperties;
-
 
     @Override
     @Transactional
@@ -45,7 +43,8 @@ public class OwnerSeeder implements ApplicationRunner {
         }
         if (userRepository.existsByUsername(bootstrap.username())) {
             log.warn(
-                    "Cannot seed bootstrap owner: username '{}' already exists", bootstrap.username());
+                    "Cannot seed bootstrap owner: username '{}' already exists",
+                    bootstrap.username());
             return;
         }
         UserEntity owner =

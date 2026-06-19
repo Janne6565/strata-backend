@@ -59,11 +59,16 @@ public class InfluxEngine implements DatabaseEngine {
             List<TableInfo> tables = new ArrayList<>();
             String measurementsFlux =
                     "import \"influxdata/influxdb/schema\"\n"
-                            + "schema.measurements(bucket: \"" + bucket + "\")";
+                            + "schema.measurements(bucket: \""
+                            + bucket
+                            + "\")";
             for (String measurement : values(client, details, measurementsFlux)) {
                 tables.add(
                         new TableInfo(
-                                bucket, measurement, "MEASUREMENT", fieldColumns(client, details, bucket, measurement)));
+                                bucket,
+                                measurement,
+                                "MEASUREMENT",
+                                fieldColumns(client, details, bucket, measurement)));
             }
             return new SchemaInfo(tables);
         } catch (RuntimeException ex) {
@@ -74,10 +79,18 @@ public class InfluxEngine implements DatabaseEngine {
     @Override
     public RowPage browse(ConnectionDetails details, ObjectRef ref, int offset, int limit) {
         String flux =
-                "from(bucket: \"" + bucket(details) + "\")\n"
+                "from(bucket: \""
+                        + bucket(details)
+                        + "\")\n"
                         + "  |> range(start: 0)\n"
-                        + "  |> filter(fn: (r) => r._measurement == \"" + ref.name() + "\")\n"
-                        + "  |> limit(n: " + Math.max(0, limit) + ", offset: " + Math.max(0, offset) + ")";
+                        + "  |> filter(fn: (r) => r._measurement == \""
+                        + ref.name()
+                        + "\")\n"
+                        + "  |> limit(n: "
+                        + Math.max(0, limit)
+                        + ", offset: "
+                        + Math.max(0, offset)
+                        + ")";
         try {
             List<FluxRecord> records = records(client(details), details, flux);
             List<String> columns = unionKeys(records);
@@ -127,7 +140,11 @@ public class InfluxEngine implements DatabaseEngine {
             InfluxDBClient client, ConnectionDetails details, String bucket, String measurement) {
         String flux =
                 "import \"influxdata/influxdb/schema\"\n"
-                        + "schema.measurementFieldKeys(bucket: \"" + bucket + "\", measurement: \"" + measurement + "\")";
+                        + "schema.measurementFieldKeys(bucket: \""
+                        + bucket
+                        + "\", measurement: \""
+                        + measurement
+                        + "\")";
         List<ColumnInfo> columns = new ArrayList<>();
         columns.add(new ColumnInfo("_time", "time", false, false));
         for (String field : values(client, details, flux)) {
@@ -147,7 +164,8 @@ public class InfluxEngine implements DatabaseEngine {
         return values;
     }
 
-    private List<FluxRecord> records(InfluxDBClient client, ConnectionDetails details, String flux) {
+    private List<FluxRecord> records(
+            InfluxDBClient client, ConnectionDetails details, String flux) {
         List<FluxRecord> records = new ArrayList<>();
         for (FluxTable table : client.getQueryApi().query(flux, org(details))) {
             records.addAll(table.getRecords());
@@ -180,7 +198,10 @@ public class InfluxEngine implements DatabaseEngine {
     }
 
     private Object cell(Object value) {
-        if (value == null || value instanceof Number || value instanceof Boolean || value instanceof String) {
+        if (value == null
+                || value instanceof Number
+                || value instanceof Boolean
+                || value instanceof String) {
             return value;
         }
         return value.toString();

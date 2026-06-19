@@ -1,7 +1,8 @@
 package com.janne6565.stratabackend.repository;
 
-import com.janne6565.stratabackend.TestcontainersConfiguration;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import com.janne6565.stratabackend.TestcontainersConfiguration;
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.model.core.CredentialResolution;
 import com.janne6565.stratabackend.model.core.CredentialSource;
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /** Verifies the jsonb columns round-trip through Hibernate + the configured JSON mapper. */
 @SpringBootTest

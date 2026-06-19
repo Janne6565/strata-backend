@@ -5,9 +5,9 @@ import com.janne6565.stratabackend.model.core.Role;
 import org.springframework.stereotype.Component;
 
 /**
- * Authorization policies for discovery and the datasource catalog. Discovery, registration and
- * (for now) inventory viewing are administrative actions, so all require {@code ADMIN} or above.
- * M3 will refine {@code DB_VIEW} into grant-scoped access for regular users.
+ * Authorization policies for discovery and the datasource catalog. Discovery, registration and (for
+ * now) inventory viewing are administrative actions, so all require {@code ADMIN} or above. M3 will
+ * refine {@code DB_VIEW} into grant-scoped access for regular users.
  */
 @Component
 public class DiscoveryPolicies {

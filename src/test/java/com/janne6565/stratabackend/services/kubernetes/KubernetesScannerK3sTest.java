@@ -1,5 +1,7 @@
 package com.janne6565.stratabackend.services.kubernetes;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.janne6565.stratabackend.model.core.WorkloadDescriptor;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
@@ -16,7 +18,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.k3s.K3sContainer;
 import org.testcontainers.utility.DockerImageName;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration test: scans a real (k3s) cluster. Applies a postgres Deployment + Service and asserts

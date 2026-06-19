@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.services.core;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.AccessGrantEntity;
 import com.janne6565.stratabackend.entity.DatasourceEntity;
@@ -12,17 +11,17 @@ import com.janne6565.stratabackend.model.exception.NotFoundException;
 import com.janne6565.stratabackend.repository.AccessGrantRepository;
 import com.janne6565.stratabackend.repository.DatasourceRepository;
 import com.janne6565.stratabackend.repository.UserRepository;
-import com.janne6565.stratabackend.security.authorization.Validates;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
  * Manages access grants. Validates scope consistency (NAMESPACE ⇒ namespace only, DATABASE ⇒
- * datasource only) and the existence of the referenced user/datasource before persisting, so the
- * DB CHECK/FK constraints are never the first line of defence.
+ * datasource only) and the existence of the referenced user/datasource before persisting, so the DB
+ * CHECK/FK constraints are never the first line of defence.
  */
 @Service
 @RequiredArgsConstructor
@@ -31,7 +30,6 @@ public class GrantService {
     private final AccessGrantRepository grantRepository;
     private final UserRepository userRepository;
     private final DatasourceRepository datasourceRepository;
-
 
     @Transactional(readOnly = true)
     public List<GrantResponse> listForUser(UUID userId) {
@@ -44,7 +42,9 @@ public class GrantService {
                 userRepository
                         .findById(request.userId())
                         .orElseThrow(
-                                () -> new NotFoundException("UserEntity not found: " + request.userId()));
+                                () ->
+                                        new NotFoundException(
+                                                "UserEntity not found: " + request.userId()));
 
         DatasourceEntity datasource = resolveScope(request);
 
@@ -88,7 +88,8 @@ public class GrantService {
                         .orElseThrow(
                                 () ->
                                         new NotFoundException(
-                                                "DatasourceEntity not found: " + request.datasourceId()));
+                                                "DatasourceEntity not found: "
+                                                        + request.datasourceId()));
             }
         };
     }

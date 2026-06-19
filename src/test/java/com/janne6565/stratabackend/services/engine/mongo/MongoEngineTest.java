@@ -1,5 +1,8 @@
 package com.janne6565.stratabackend.services.engine.mongo;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.janne6565.stratabackend.model.core.ColumnInfo;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.core.ObjectRef;
@@ -19,16 +22,13 @@ import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Exercises the MongoDB adapter against a real (Testcontainers) target database. */
 @Testcontainers
 class MongoEngineTest {
 
     @Container
-    static final MongoDBContainer MONGO =
-            new MongoDBContainer(DockerImageName.parse("mongo:7"));
+    static final MongoDBContainer MONGO = new MongoDBContainer(DockerImageName.parse("mongo:7"));
 
     private final MongoEngine engine = new MongoEngine();
 

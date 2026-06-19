@@ -2,7 +2,6 @@ package com.janne6565.stratabackend.services.engine;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
-import com.janne6565.stratabackend.services.kubernetes.CredentialReader;
 
 /**
  * Resolves the live {@link ConnectionDetails} for a datasource (cluster-DNS host + on-demand

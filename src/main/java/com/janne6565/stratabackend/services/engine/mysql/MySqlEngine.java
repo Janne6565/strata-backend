@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * MySQL adapter (ARCHITECTURE.md §9). The database is the JDBC catalog; identifiers are
- * backtick-quoted. Read-only is enforced by the shared read-only-transaction logic
- * ({@code SET TRANSACTION READ ONLY}).
+ * backtick-quoted. Read-only is enforced by the shared read-only-transaction logic ({@code SET
+ * TRANSACTION READ ONLY}).
  */
 @Component
 public class MySqlEngine extends AbstractJdbcEngine {

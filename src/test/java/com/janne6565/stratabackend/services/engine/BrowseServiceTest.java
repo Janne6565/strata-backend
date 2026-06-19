@@ -1,5 +1,13 @@
 package com.janne6565.stratabackend.services.engine;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.core.AuditOutcome;
@@ -29,13 +37,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /** Exercises the full service→engine→audit path against a real (Testcontainers) target Postgres. */
 @Testcontainers
@@ -103,13 +104,20 @@ class BrowseServiceTest {
         assertThat(page.columns()).contains("id", "name");
         assertThat(page.rows()).isNotEmpty();
         verify(auditService)
-                .record(eq(caller.getId()), eq("DB_BROWSE"), any(), eq("default"), eq(AuditOutcome.SUCCESS), any());
+                .record(
+                        eq(caller.getId()),
+                        eq("DB_BROWSE"),
+                        any(),
+                        eq("default"),
+                        eq(AuditOutcome.SUCCESS),
+                        any());
     }
 
     @Test
     void readQueryReturnsRows() {
         QueryResult result =
-                service.query(datasource.getId(), "SELECT name FROM customer", QueryMode.READ, caller);
+                service.query(
+                        datasource.getId(), "SELECT name FROM customer", QueryMode.READ, caller);
 
         assertThat(result.columns()).containsExactly("name");
         assertThat(result.rows()).isNotEmpty();

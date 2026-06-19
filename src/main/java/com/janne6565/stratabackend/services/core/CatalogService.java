@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.services.core;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
@@ -13,6 +12,7 @@ import com.janne6565.stratabackend.repository.DatasourceRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -24,7 +24,6 @@ public class CatalogService {
 
     private final DatasourceRepository datasourceRepository;
     private final GrantEvaluator grantEvaluator;
-
 
     /** Service-layer scoping (enforcement layer 2): callers see only datasources they may read. */
     @Transactional(readOnly = true)
@@ -79,7 +78,8 @@ public class CatalogService {
     }
 
     private String discoveryKey(ManualAddRequest request) {
-        String kind = StringUtils.hasText(request.workloadKind()) ? request.workloadKind() : "manual";
+        String kind =
+                StringUtils.hasText(request.workloadKind()) ? request.workloadKind() : "manual";
         String name =
                 StringUtils.hasText(request.workloadName())
                         ? request.workloadName()

@@ -23,7 +23,8 @@ public class JdbcConnectionPool implements AutoCloseable {
     /** Borrows a pooled connection for the given endpoint; the pool is created on first use. */
     public Connection connection(String jdbcUrl, String username, String password)
             throws SQLException {
-        return pools.computeIfAbsent(key(jdbcUrl, username), k -> build(jdbcUrl, username, password))
+        return pools.computeIfAbsent(
+                        key(jdbcUrl, username), k -> build(jdbcUrl, username, password))
                 .getConnection();
     }
 

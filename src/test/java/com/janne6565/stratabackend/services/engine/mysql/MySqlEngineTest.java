@@ -1,5 +1,8 @@
 package com.janne6565.stratabackend.services.engine.mysql;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.janne6565.stratabackend.model.core.ColumnInfo;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.core.ObjectRef;
@@ -20,16 +23,13 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Exercises the MySQL adapter against a real (Testcontainers) target database. */
 @Testcontainers
 class MySqlEngineTest {
 
     @Container
-    static final MySQLContainer<?> MYSQL =
-            new MySQLContainer<>(DockerImageName.parse("mysql:8.4"));
+    static final MySQLContainer<?> MYSQL = new MySQLContainer<>(DockerImageName.parse("mysql:8.4"));
 
     private final MySqlEngine engine = new MySqlEngine(new JdbcConnectionPool());
 
@@ -49,7 +49,8 @@ class MySqlEngineTest {
                         DriverManager.getConnection(
                                 MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword());
                 Statement s = c.createStatement()) {
-            s.execute("CREATE TABLE customer (id int AUTO_INCREMENT PRIMARY KEY, name varchar(255) NOT NULL)");
+            s.execute(
+                    "CREATE TABLE customer (id int AUTO_INCREMENT PRIMARY KEY, name varchar(255) NOT NULL)");
             s.execute("INSERT INTO customer (name) VALUES ('Ada'), ('Linus'), ('Grace')");
         }
     }
@@ -74,7 +75,8 @@ class MySqlEngineTest {
 
     @Test
     void browseReturnsRows() {
-        RowPage page = engine.browse(details(), new ObjectRef(MYSQL.getDatabaseName(), "customer"), 0, 2);
+        RowPage page =
+                engine.browse(details(), new ObjectRef(MYSQL.getDatabaseName(), "customer"), 0, 2);
 
         assertThat(page.columns()).contains("id", "name");
         assertThat(page.rows()).hasSize(2);
@@ -83,7 +85,8 @@ class MySqlEngineTest {
     @Test
     void readQueryReturnsRows() {
         QueryResult result =
-                engine.runQuery(details(), "SELECT name FROM customer ORDER BY name", QueryMode.READ);
+                engine.runQuery(
+                        details(), "SELECT name FROM customer ORDER BY name", QueryMode.READ);
 
         assertThat(result.rows()).hasSize(3);
         assertThat(result.rows().get(0).get(0)).isEqualTo("Ada");
@@ -104,7 +107,9 @@ class MySqlEngineTest {
     void writeModeAllowsWrites() {
         QueryResult result =
                 engine.runQuery(
-                        details(), "INSERT INTO customer (name) VALUES ('Dennis')", QueryMode.WRITE);
+                        details(),
+                        "INSERT INTO customer (name) VALUES ('Dennis')",
+                        QueryMode.WRITE);
 
         assertThat(result.updateCount()).isEqualTo(1);
     }

@@ -1,12 +1,13 @@
 package com.janne6565.stratabackend.services.engine;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.janne6565.stratabackend.model.exception.BadRequestException;
 import com.janne6565.stratabackend.services.engine.jdbc.JdbcConnectionPool;
 import com.janne6565.stratabackend.services.engine.postgres.PostgresEngine;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class EngineRegistryTest {
 

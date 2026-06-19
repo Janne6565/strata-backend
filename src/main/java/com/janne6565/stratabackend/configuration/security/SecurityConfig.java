@@ -18,9 +18,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
-    /** Public endpoints: login + the OpenAPI/Swagger surface used to generate the frontend client. */
+    /**
+     * Public endpoints: login + the OpenAPI/Swagger surface used to generate the frontend client.
+     */
     private static final String[] PUBLIC_PATHS = {
-        "/api/auth/login", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+        "/api/v1/auth/login", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
     @Bean
@@ -44,7 +46,8 @@ public class SecurityConfig {
                                         .anyRequest()
                                         .authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
+                        jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 }

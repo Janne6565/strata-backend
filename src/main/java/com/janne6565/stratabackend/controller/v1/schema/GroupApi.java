@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * enforced on the controller implementation via the policy aspect.
  */
 @Tag(name = "Groups")
-@RequestMapping(path = "/api/groups", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/v1/groups", produces = MediaType.APPLICATION_JSON_VALUE)
 public interface GroupApi {
 
     @Operation(summary = "List the caller's datasource groups")

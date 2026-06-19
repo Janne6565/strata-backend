@@ -1,5 +1,8 @@
 package com.janne6565.stratabackend.services.engine.influx;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.InfluxDBClientFactory;
 import com.influxdb.client.WriteApiBlocking;
@@ -19,8 +22,6 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Exercises the InfluxDB 2.x adapter against a real (Testcontainers) target instance. */
 @Testcontainers
@@ -90,7 +91,9 @@ class InfluxEngineTest {
     @Test
     void readFluxReturnsRows() {
         String flux =
-                "from(bucket: \"" + BUCKET + "\") |> range(start: 0) "
+                "from(bucket: \""
+                        + BUCKET
+                        + "\") |> range(start: 0) "
                         + "|> filter(fn: (r) => r._measurement == \"weather\")";
 
         QueryResult result = engine.runQuery(details(), flux, QueryMode.READ);
@@ -101,8 +104,7 @@ class InfluxEngineTest {
     @Test
     void readModeRejectsWriteFunction() {
         String flux =
-                "from(bucket: \"" + BUCKET + "\") |> range(start: 0) "
-                        + "|> to(bucket: \"other\")";
+                "from(bucket: \"" + BUCKET + "\") |> range(start: 0) " + "|> to(bucket: \"other\")";
 
         assertThatThrownBy(() -> engine.runQuery(details(), flux, QueryMode.READ))
                 .isInstanceOf(EngineException.class);

@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.services.core;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.configuration.kubernetes.KubernetesProperties;
 import com.janne6565.stratabackend.entity.AccessGrantEntity;
@@ -9,13 +8,14 @@ import com.janne6565.stratabackend.model.core.Role;
 import com.janne6565.stratabackend.repository.AccessGrantRepository;
 import java.util.List;
 import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
- * Central access decision over grants + global prod safe-mode (AUTH.md "Roles, grants, scoping").
- * A grant covers a datasource if it targets the datasource directly (DATABASE scope) or its
- * namespace (NAMESPACE scope). Admins see everything. Writes additionally require a non-read-only
- * grant and that prod safe-mode does not apply — the most restrictive rule wins.
+ * Central access decision over grants + global prod safe-mode (AUTH.md "Roles, grants, scoping"). A
+ * grant covers a datasource if it targets the datasource directly (DATABASE scope) or its namespace
+ * (NAMESPACE scope). Admins see everything. Writes additionally require a non-read-only grant and
+ * that prod safe-mode does not apply — the most restrictive rule wins.
  */
 @Component
 @RequiredArgsConstructor
@@ -23,7 +23,6 @@ public class GrantEvaluator {
 
     private final AccessGrantRepository grantRepository;
     private final KubernetesProperties kubernetesProperties;
-
 
     /** Whether the caller may view/browse/read the datasource. */
     public boolean canRead(UserEntity caller, DatasourceEntity datasource) {
@@ -38,7 +37,8 @@ public class GrantEvaluator {
         return isAdmin(caller) || hasCoveringGrant(caller, datasource, true);
     }
 
-    private boolean hasCoveringGrant(UserEntity caller, DatasourceEntity datasource, boolean requireWritable) {
+    private boolean hasCoveringGrant(
+            UserEntity caller, DatasourceEntity datasource, boolean requireWritable) {
         List<AccessGrantEntity> grants = grantRepository.findByUserId(caller.getId());
         for (AccessGrantEntity grant : grants) {
             if (covers(grant, datasource) && (!requireWritable || !grant.isReadOnly())) {

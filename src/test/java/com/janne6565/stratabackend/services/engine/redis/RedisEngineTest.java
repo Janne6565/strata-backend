@@ -1,5 +1,8 @@
 package com.janne6565.stratabackend.services.engine.redis;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.core.ObjectRef;
 import com.janne6565.stratabackend.model.core.QueryMode;
@@ -17,8 +20,6 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Exercises the Redis adapter against a real (Testcontainers) target instance. */
 @Testcontainers
@@ -37,7 +38,11 @@ class RedisEngineTest {
 
     @BeforeAll
     static void seed() {
-        RedisURI uri = RedisURI.builder().withHost(REDIS.getHost()).withPort(REDIS.getMappedPort(6379)).build();
+        RedisURI uri =
+                RedisURI.builder()
+                        .withHost(REDIS.getHost())
+                        .withPort(REDIS.getMappedPort(6379))
+                        .build();
         try (RedisClient client = RedisClient.create(uri);
                 StatefulRedisConnection<String, String> connection = client.connect()) {
             RedisCommands<String, String> sync = connection.sync();
@@ -53,7 +58,9 @@ class RedisEngineTest {
 
         assertThat(schema.tables()).hasSize(1);
         assertThat(schema.tables().get(0).name()).isEqualTo("keys");
-        assertThat(schema.tables().get(0).columns()).extracting(c -> c.name()).contains("key", "type", "ttl");
+        assertThat(schema.tables().get(0).columns())
+                .extracting(c -> c.name())
+                .contains("key", "type", "ttl");
     }
 
     @Test
@@ -76,7 +83,9 @@ class RedisEngineTest {
     void readHgetallReturnsFields() {
         QueryResult result = engine.runQuery(details(), "HGETALL profile:1", QueryMode.READ);
 
-        assertThat(result.rows()).extracting(r -> r.get(0)).contains("name", "Ada", "role", "admin");
+        assertThat(result.rows())
+                .extracting(r -> r.get(0))
+                .contains("name", "Ada", "role", "admin");
     }
 
     @Test

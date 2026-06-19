@@ -1,7 +1,5 @@
 package com.janne6565.stratabackend.services.core;
-import lombok.RequiredArgsConstructor;
 
-import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.DbGroupEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.action.CreateGroupRequest;
@@ -16,6 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +29,6 @@ public class GroupService {
 
     private final DbGroupRepository groupRepository;
     private final DatasourceRepository datasourceRepository;
-
 
     @Transactional(readOnly = true)
     public List<GroupResponse> listForOwner(UserEntity owner) {
@@ -59,7 +57,8 @@ public class GroupService {
 
     @Transactional
     public void reorder(List<UUID> orderedIds, UserEntity owner) {
-        List<DbGroupEntity> owned = groupRepository.findByOwnerUserIdOrderByPositionAsc(owner.getId());
+        List<DbGroupEntity> owned =
+                groupRepository.findByOwnerUserIdOrderByPositionAsc(owner.getId());
         Map<UUID, DbGroupEntity> byId =
                 owned.stream().collect(Collectors.toMap(DbGroupEntity::getId, Function.identity()));
         int position = 0;

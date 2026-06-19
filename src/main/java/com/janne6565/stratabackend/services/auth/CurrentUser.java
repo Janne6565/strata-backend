@@ -8,7 +8,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-/** Reads the authenticated {@link UserEntity} placed in the security context by {@link JwtAuthenticationFilter}. */
+/**
+ * Reads the authenticated {@link UserEntity} placed in the security context by {@link
+ * JwtAuthenticationFilter}.
+ */
 @Component
 public class CurrentUser {
 

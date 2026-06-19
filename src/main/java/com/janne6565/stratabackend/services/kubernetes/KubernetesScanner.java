@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.services.kubernetes;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.model.core.WorkloadDescriptor;
 import io.fabric8.kubernetes.api.model.Container;
@@ -15,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,7 +27,6 @@ import org.springframework.stereotype.Component;
 public class KubernetesScanner {
 
     private final KubernetesClient client;
-
 
     public List<WorkloadDescriptor> scan() {
         List<WorkloadDescriptor> descriptors = new ArrayList<>();

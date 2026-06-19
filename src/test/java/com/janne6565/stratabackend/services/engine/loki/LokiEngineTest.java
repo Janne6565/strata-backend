@@ -1,5 +1,8 @@
 package com.janne6565.stratabackend.services.engine.loki;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.core.ObjectRef;
 import com.janne6565.stratabackend.model.core.QueryMode;
@@ -19,8 +22,6 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Exercises the Loki adapter against a real (Testcontainers) target instance. */
 @Testcontainers
@@ -47,8 +48,12 @@ class LokiEngineTest {
         long now = System.currentTimeMillis() * 1_000_000L;
         String body =
                 "{\"streams\":[{\"stream\":{\"app\":\"web\"},\"values\":["
-                        + "[\"" + now + "\",\"hello from web\"],"
-                        + "[\"" + (now + 1_000_000L) + "\",\"second line\"]]}]}";
+                        + "[\""
+                        + now
+                        + "\",\"hello from web\"],"
+                        + "[\""
+                        + (now + 1_000_000L)
+                        + "\",\"second line\"]]}]}";
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request =
                 HttpRequest.newBuilder(
@@ -77,7 +82,9 @@ class LokiEngineTest {
         SchemaInfo schema = engine.introspect(details());
 
         assertThat(schema.tables()).hasSize(1);
-        assertThat(schema.tables().get(0).columns()).extracting(c -> c.name()).contains("line", "app");
+        assertThat(schema.tables().get(0).columns())
+                .extracting(c -> c.name())
+                .contains("line", "app");
     }
 
     @Test

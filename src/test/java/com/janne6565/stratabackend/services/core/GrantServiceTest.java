@@ -1,5 +1,12 @@
 package com.janne6565.stratabackend.services.core;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.janne6565.stratabackend.entity.AccessGrantEntity;
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
@@ -19,12 +26,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class GrantServiceTest {
@@ -40,11 +41,13 @@ class GrantServiceTest {
     void createsNamespaceGrant() {
         UserEntity target = new UserEntity("u", "h", Role.USER);
         when(userRepository.findById(target.getId())).thenReturn(Optional.of(target));
-        when(grantRepository.save(any(AccessGrantEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(grantRepository.save(any(AccessGrantEntity.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
         GrantResponse response =
                 grantService.create(
-                        new CreateGrantRequest(target.getId(), ScopeType.NAMESPACE, "prod", null, true),
+                        new CreateGrantRequest(
+                                target.getId(), ScopeType.NAMESPACE, "prod", null, true),
                         caller);
 
         assertThat(response.scopeType()).isEqualTo(ScopeType.NAMESPACE);
@@ -62,7 +65,11 @@ class GrantServiceTest {
                         () ->
                                 grantService.create(
                                         new CreateGrantRequest(
-                                                target.getId(), ScopeType.NAMESPACE, " ", null, false),
+                                                target.getId(),
+                                                ScopeType.NAMESPACE,
+                                                " ",
+                                                null,
+                                                false),
                                         caller))
                 .isInstanceOf(BadRequestException.class);
         verify(grantRepository, never()).save(any());
@@ -94,7 +101,8 @@ class GrantServiceTest {
         ds.setDisplayName("orders-db");
         when(userRepository.findById(target.getId())).thenReturn(Optional.of(target));
         when(datasourceRepository.findById(ds.getId())).thenReturn(Optional.of(ds));
-        when(grantRepository.save(any(AccessGrantEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(grantRepository.save(any(AccessGrantEntity.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
         GrantResponse response =
                 grantService.create(
@@ -116,7 +124,11 @@ class GrantServiceTest {
                         () ->
                                 grantService.create(
                                         new CreateGrantRequest(
-                                                target.getId(), ScopeType.DATABASE, null, null, false),
+                                                target.getId(),
+                                                ScopeType.DATABASE,
+                                                null,
+                                                null,
+                                                false),
                                         caller))
                 .isInstanceOf(BadRequestException.class);
     }
@@ -132,7 +144,11 @@ class GrantServiceTest {
                         () ->
                                 grantService.create(
                                         new CreateGrantRequest(
-                                                target.getId(), ScopeType.DATABASE, null, missing, false),
+                                                target.getId(),
+                                                ScopeType.DATABASE,
+                                                null,
+                                                missing,
+                                                false),
                                         caller))
                 .isInstanceOf(NotFoundException.class);
     }
@@ -156,7 +172,8 @@ class GrantServiceTest {
         UUID missing = UUID.randomUUID();
         when(grantRepository.existsById(missing)).thenReturn(false);
 
-        assertThatThrownBy(() -> grantService.revoke(missing)).isInstanceOf(NotFoundException.class);
+        assertThatThrownBy(() -> grantService.revoke(missing))
+                .isInstanceOf(NotFoundException.class);
         verify(grantRepository, never()).deleteById(any());
     }
 

@@ -19,9 +19,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 /**
- * A database Strata knows about — the stable, persisted identity that grants/groups/audit
- * reference (ARCHITECTURE.md §4). This M1 mapping covers the scalar identity/lifecycle columns;
- * M2 (discovery) adds the jsonb credential-resolution / manual-overrides fields and the scan
+ * A database Strata knows about — the stable, persisted identity that grants/groups/audit reference
+ * (ARCHITECTURE.md §4). This M1 mapping covers the scalar identity/lifecycle columns; M2
+ * (discovery) adds the jsonb credential-resolution / manual-overrides fields and the scan
  * reconciliation. {@code ddl-auto: validate} tolerates the as-yet-unmapped columns.
  */
 @Entity

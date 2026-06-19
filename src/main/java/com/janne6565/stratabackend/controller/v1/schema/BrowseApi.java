@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 /** Browse/query contract for a datasource. Authorization is enforced on the implementation. */
 @Tag(name = "Browse")
-@RequestMapping(path = "/api/datasources/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/v1/datasources/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 public interface BrowseApi {
 
     @Operation(summary = "Introspect the datasource schema (tables/columns)")

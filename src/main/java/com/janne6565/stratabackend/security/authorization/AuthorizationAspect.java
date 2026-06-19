@@ -1,10 +1,10 @@
 package com.janne6565.stratabackend.security.authorization;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.exception.ForbiddenException;
 import com.janne6565.stratabackend.services.auth.CurrentUser;
 import java.lang.annotation.Annotation;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -26,7 +26,6 @@ public class AuthorizationAspect {
     private final ValidatorRegistry validatorRegistry;
     private final ResourceResolver resourceResolver;
 
-
     @Before("@annotation(needsValidation)")
     public void authorize(JoinPoint joinPoint, NeedsValidation needsValidation) {
         UserEntity user = currentUser.require();
@@ -35,16 +34,16 @@ public class AuthorizationAspect {
                 validatorRegistry.validate(
                         needsValidation.value(), resourceResolver, referenceId, user);
         if (!allowed) {
-            throw new ForbiddenException(
-                    "Not permitted to perform " + needsValidation.value());
+            throw new ForbiddenException("Not permitted to perform " + needsValidation.value());
         }
     }
 
-    /** Returns the value of the parameter annotated {@link ResourceId}, or null if there is none. */
+    /**
+     * Returns the value of the parameter annotated {@link ResourceId}, or null if there is none.
+     */
     private Object extractResourceId(JoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        Annotation[][] parameterAnnotations =
-                signature.getMethod().getParameterAnnotations();
+        Annotation[][] parameterAnnotations = signature.getMethod().getParameterAnnotations();
         Object[] args = joinPoint.getArgs();
         for (int i = 0; i < parameterAnnotations.length; i++) {
             for (Annotation annotation : parameterAnnotations[i]) {

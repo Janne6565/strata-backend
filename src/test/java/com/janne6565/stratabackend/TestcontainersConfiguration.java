@@ -7,8 +7,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Spins up a throwaway PostgreSQL for integration tests; {@link ServiceConnection} wires it to
- * the datasource automatically. Requires a running Docker daemon.
+ * Spins up a throwaway PostgreSQL for integration tests; {@link ServiceConnection} wires it to the
+ * datasource automatically. Requires a running Docker daemon.
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {

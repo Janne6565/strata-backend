@@ -1,5 +1,8 @@
 package com.janne6565.stratabackend.services.engine.postgres;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.janne6565.stratabackend.model.core.ColumnInfo;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.core.ObjectRef;
@@ -20,8 +23,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Exercises the PostgreSQL adapter against a real (Testcontainers) target database. */
 @Testcontainers
@@ -47,7 +48,9 @@ class PostgresEngineTest {
     static void seed() throws SQLException {
         try (Connection c =
                         DriverManager.getConnection(
-                                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+                                POSTGRES.getJdbcUrl(),
+                                POSTGRES.getUsername(),
+                                POSTGRES.getPassword());
                 Statement s = c.createStatement()) {
             s.execute("CREATE TABLE customer (id serial PRIMARY KEY, name text NOT NULL)");
             s.execute("INSERT INTO customer (name) VALUES ('Ada'), ('Linus'), ('Grace')");
@@ -84,7 +87,8 @@ class PostgresEngineTest {
     @Test
     void readQueryReturnsRows() {
         QueryResult result =
-                engine.runQuery(details(), "SELECT name FROM customer ORDER BY name", QueryMode.READ);
+                engine.runQuery(
+                        details(), "SELECT name FROM customer ORDER BY name", QueryMode.READ);
 
         assertThat(result.columns()).containsExactly("name");
         assertThat(result.rows()).hasSize(3);
@@ -106,7 +110,9 @@ class PostgresEngineTest {
     void writeModeAllowsWrites() {
         QueryResult result =
                 engine.runQuery(
-                        details(), "INSERT INTO customer (name) VALUES ('Dennis')", QueryMode.WRITE);
+                        details(),
+                        "INSERT INTO customer (name) VALUES ('Dennis')",
+                        QueryMode.WRITE);
 
         assertThat(result.updateCount()).isEqualTo(1);
     }

@@ -23,10 +23,10 @@ import java.util.Set;
 
 /**
  * Shared JDBC implementation of the engine SPI: metadata introspection, paged browse and
- * read-only-transaction query execution. Connections are borrowed from the shared
- * {@link JdbcConnectionPool} for the resolved {@link ConnectionDetails}; {@link SQLException}s are
- * wrapped in {@link EngineException}. Subclasses supply the engine-specific bits — driver id, JDBC
- * URL, identifier quoting, system schemas, and whether the database name lives in the JDBC catalog
+ * read-only-transaction query execution. Connections are borrowed from the shared {@link
+ * JdbcConnectionPool} for the resolved {@link ConnectionDetails}; {@link SQLException}s are wrapped
+ * in {@link EngineException}. Subclasses supply the engine-specific bits — driver id, JDBC URL,
+ * identifier quoting, system schemas, and whether the database name lives in the JDBC catalog
  * (MySQL) or schema (PostgreSQL).
  */
 public abstract class AbstractJdbcEngine implements DatabaseEngine {
@@ -49,7 +49,9 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
     /** Quotes an identifier for this dialect. */
     protected abstract String quote(String identifier);
 
-    /** True when the database name is the JDBC catalog (MySQL) rather than the schema (PostgreSQL). */
+    /**
+     * True when the database name is the JDBC catalog (MySQL) rather than the schema (PostgreSQL).
+     */
     protected abstract boolean databaseIsCatalog();
 
     @Override
@@ -58,8 +60,7 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
     }
 
     private Connection connection(ConnectionDetails details) throws SQLException {
-        return connectionPool.connection(
-                jdbcUrl(details), details.username(), details.password());
+        return connectionPool.connection(jdbcUrl(details), details.username(), details.password());
     }
 
     @Override
@@ -96,7 +97,10 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
         List<TableInfo> tables = new ArrayList<>();
         try (ResultSet rs = meta.getTables(null, null, "%", new String[] {"TABLE", "VIEW"})) {
             while (rs.next()) {
-                String schema = databaseIsCatalog() ? rs.getString("TABLE_CAT") : rs.getString("TABLE_SCHEM");
+                String schema =
+                        databaseIsCatalog()
+                                ? rs.getString("TABLE_CAT")
+                                : rs.getString("TABLE_SCHEM");
                 if (schema == null || systemSchemas().contains(schema)) {
                     continue;
                 }

@@ -18,8 +18,8 @@ import lombok.Setter;
 
 /**
  * A per-user logical grouping of datasources (ARCHITECTURE.md §4). Groups are labels only — they
- * never touch the cluster — and are private to their owner. Membership maps the
- * {@code db_group_member} join table as a set of datasource ids.
+ * never touch the cluster — and are private to their owner. Membership maps the {@code
+ * db_group_member} join table as a set of datasource ids.
  */
 @Entity
 @Table(name = "db_group")

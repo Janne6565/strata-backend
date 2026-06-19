@@ -6,7 +6,8 @@ import java.util.List;
 /**
  * What a scan extracts about a candidate database workload: its identity, primary container image
  * and observed ports, the container itself (for credential resolution), and its backing Service.
- * The {@link #discoveryKey()} is the stable natural key used to reconcile scans against the catalog.
+ * The {@link #discoveryKey()} is the stable natural key used to reconcile scans against the
+ * catalog.
  */
 public record WorkloadDescriptor(
         String namespace,

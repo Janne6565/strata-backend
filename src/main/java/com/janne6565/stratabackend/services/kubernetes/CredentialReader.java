@@ -1,5 +1,4 @@
 package com.janne6565.stratabackend.services.kubernetes;
-import lombok.RequiredArgsConstructor;
 
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
@@ -15,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,7 +28,6 @@ import org.springframework.stereotype.Component;
 public class CredentialReader implements ConnectionDetailsResolver {
 
     private final KubernetesClient client;
-
 
     @Override
     public ConnectionDetails resolve(DatasourceEntity datasource) {
@@ -94,7 +93,8 @@ public class CredentialReader implements ConnectionDetailsResolver {
         if (configMap == null
                 || configMap.getData() == null
                 || !configMap.getData().containsKey(key)) {
-            throw new NotFoundException("ConfigMap " + namespace + "/" + name + " key '" + key + "'");
+            throw new NotFoundException(
+                    "ConfigMap " + namespace + "/" + name + " key '" + key + "'");
         }
         return configMap.getData().get(key);
     }
