@@ -13,5 +13,9 @@ public enum Operation {
     USER_DELETE,
     GRANT_LIST,
     GRANT_CREATE,
-    GRANT_REVOKE
+    GRANT_REVOKE,
+    DISCOVERY_RESCAN,
+    DB_REGISTER,
+    DB_UNREGISTER,
+    DB_VIEW
 }
