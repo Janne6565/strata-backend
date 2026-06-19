@@ -9,7 +9,11 @@ import java.util.List;
  */
 public record CredentialResolution(String strategy, List<CredentialSource> sources) {
 
-    public boolean isFullyResolved() {
+    /**
+     * Named without an {@code is}/{@code get} prefix on purpose: it is a derived helper, not a
+     * bean property, so the JSON mapper does not serialize it into the persisted jsonb.
+     */
+    public boolean allResolved() {
         return sources.stream().noneMatch(s -> s.type() == CredentialSourceType.UNRESOLVED);
     }
 }

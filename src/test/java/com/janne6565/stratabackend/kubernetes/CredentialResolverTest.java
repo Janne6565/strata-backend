@@ -67,7 +67,7 @@ class CredentialResolverTest {
         assertThat(database.name()).isEqualTo("pg-config");
         assertThat(database.key()).isEqualTo("db-name");
 
-        assertThat(resolution.isFullyResolved()).isTrue();
+        assertThat(resolution.allResolved()).isTrue();
     }
 
     @Test
@@ -96,6 +96,6 @@ class CredentialResolverTest {
 
         assertThat(sourceFor(resolution, "password").type())
                 .isEqualTo(CredentialSourceType.UNRESOLVED);
-        assertThat(resolution.isFullyResolved()).isFalse();
+        assertThat(resolution.allResolved()).isFalse();
     }
 }

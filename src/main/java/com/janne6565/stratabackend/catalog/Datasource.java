@@ -7,10 +7,13 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * A database Strata knows about — the stable, persisted identity that grants/groups/audit
@@ -70,6 +73,20 @@ public class Datasource {
 
     @Column(name = "detected_via")
     private String detectedVia;
+
+    /** Pointer-only description of how credentials resolve (no secret values). */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "credential_resolution")
+    private CredentialResolution credentialResolution;
+
+    /** Admin-corrected fields a rescan must not clobber (field name → value). */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "manual_overrides")
+    private Map<String, String> manualOverrides;
+
+    /** The admin who manually added this datasource; null for discovered rows. */
+    @Column(name = "created_by")
+    private UUID createdBy;
 
     @Column(name = "first_seen_at", nullable = false)
     private Instant firstSeenAt;
