@@ -1,6 +1,8 @@
 package com.janne6565.stratabackend.engine.postgres;
 
+import com.janne6565.stratabackend.engine.ConnectionDetails;
 import com.janne6565.stratabackend.engine.jdbc.AbstractJdbcEngine;
+import com.janne6565.stratabackend.engine.jdbc.JdbcConnectionPool;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
@@ -14,9 +16,19 @@ public class PostgresEngine extends AbstractJdbcEngine {
 
     private static final Set<String> SYSTEM_SCHEMAS = Set.of("pg_catalog", "information_schema");
 
+    public PostgresEngine(JdbcConnectionPool connectionPool) {
+        super(connectionPool);
+    }
+
     @Override
     public String driver() {
         return "postgresql";
+    }
+
+    @Override
+    protected String jdbcUrl(ConnectionDetails details) {
+        String database = details.database() == null ? "" : details.database();
+        return "jdbc:postgresql://" + details.host() + ":" + details.port() + "/" + database;
     }
 
     @Override

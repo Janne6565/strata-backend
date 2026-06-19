@@ -1,6 +1,8 @@
 package com.janne6565.stratabackend.engine.jdbc;
 
+import com.janne6565.stratabackend.common.EngineException;
 import com.janne6565.stratabackend.engine.ColumnInfo;
+import com.janne6565.stratabackend.engine.ConnectionDetails;
 import com.janne6565.stratabackend.engine.DatabaseEngine;
 import com.janne6565.stratabackend.engine.ObjectRef;
 import com.janne6565.stratabackend.engine.QueryMode;
@@ -21,14 +23,25 @@ import java.util.Set;
 
 /**
  * Shared JDBC implementation of the engine SPI: metadata introspection, paged browse and
- * read-only-transaction query execution. Subclasses supply the engine-specific bits — driver id,
- * identifier quoting, system schemas, and whether the database name lives in the JDBC catalog
+ * read-only-transaction query execution. Connections are borrowed from the shared
+ * {@link JdbcConnectionPool} for the resolved {@link ConnectionDetails}; {@link SQLException}s are
+ * wrapped in {@link EngineException}. Subclasses supply the engine-specific bits — driver id, JDBC
+ * URL, identifier quoting, system schemas, and whether the database name lives in the JDBC catalog
  * (MySQL) or schema (PostgreSQL).
  */
 public abstract class AbstractJdbcEngine implements DatabaseEngine {
 
     /** Cap on rows materialised from an ad-hoc query result, to bound memory. */
     protected static final int MAX_QUERY_ROWS = 1000;
+
+    private final JdbcConnectionPool connectionPool;
+
+    protected AbstractJdbcEngine(JdbcConnectionPool connectionPool) {
+        this.connectionPool = connectionPool;
+    }
+
+    /** Builds the JDBC URL for this dialect from the resolved connection details. */
+    protected abstract String jdbcUrl(ConnectionDetails details);
 
     /** Schemas/catalogs to hide from introspection. */
     protected abstract Set<String> systemSchemas();
@@ -44,8 +57,41 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
         return true;
     }
 
+    private Connection connection(ConnectionDetails details) throws SQLException {
+        return connectionPool.connection(
+                jdbcUrl(details), details.username(), details.password());
+    }
+
     @Override
-    public SchemaInfo introspect(Connection connection) throws SQLException {
+    public SchemaInfo introspect(ConnectionDetails details) {
+        try (Connection connection = connection(details)) {
+            return doIntrospect(connection);
+        } catch (SQLException ex) {
+            throw new EngineException("Introspection failed: " + ex.getMessage());
+        }
+    }
+
+    @Override
+    public RowPage browse(ConnectionDetails details, ObjectRef ref, int offset, int limit) {
+        try (Connection connection = connection(details)) {
+            return doBrowse(connection, ref, offset, limit);
+        } catch (SQLException ex) {
+            throw new EngineException("Browse failed: " + ex.getMessage());
+        }
+    }
+
+    @Override
+    public QueryResult runQuery(ConnectionDetails details, String sql, QueryMode mode) {
+        try (Connection connection = connection(details)) {
+            return mode == QueryMode.READ
+                    ? runReadOnly(connection, sql)
+                    : runWritable(connection, sql);
+        } catch (SQLException ex) {
+            throw new EngineException("Query failed: " + ex.getMessage());
+        }
+    }
+
+    private SchemaInfo doIntrospect(Connection connection) throws SQLException {
         DatabaseMetaData meta = connection.getMetaData();
         List<TableInfo> tables = new ArrayList<>();
         try (ResultSet rs = meta.getTables(null, null, "%", new String[] {"TABLE", "VIEW"})) {
@@ -109,8 +155,7 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
                 : meta.getPrimaryKeys(null, schema, table);
     }
 
-    @Override
-    public RowPage browse(Connection connection, ObjectRef ref, int offset, int limit)
+    private RowPage doBrowse(Connection connection, ObjectRef ref, int offset, int limit)
             throws SQLException {
         String sql = "SELECT * FROM " + qualified(ref) + " LIMIT ? OFFSET ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -121,12 +166,6 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
                 return new RowPage(columns, readRows(rs, columns.size(), limit), offset, limit);
             }
         }
-    }
-
-    @Override
-    public QueryResult runQuery(Connection connection, String sql, QueryMode mode)
-            throws SQLException {
-        return mode == QueryMode.READ ? runReadOnly(connection, sql) : runWritable(connection, sql);
     }
 
     /**

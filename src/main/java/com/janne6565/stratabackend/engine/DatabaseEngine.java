@@ -1,27 +1,29 @@
 package com.janne6565.stratabackend.engine;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import com.janne6565.stratabackend.common.EngineException;
 
 /**
  * Per-engine adapter SPI (ARCHITECTURE.md §9). Each implementation knows how to introspect, browse
- * and query one database engine over a live {@link Connection} supplied by the connection manager.
- * Detection is handled separately by the config-driven {@code DetectorMatcher} (M2), so it is not
- * part of this SPI. Implementations must be stateless and thread-safe.
+ * and query one database engine, given the resolved {@link ConnectionDetails}. The adapter owns its
+ * own connection/client lifecycle (pooling, sessions) — JDBC engines share a pool via
+ * {@code AbstractJdbcEngine}, NoSQL/time-series engines manage their own clients. Detection is
+ * handled separately by the config-driven {@code DetectorMatcher} (M2), so it is not part of this
+ * SPI. Implementations must be stateless across calls and thread-safe; failures surface as
+ * {@link EngineException}.
  */
 public interface DatabaseEngine {
 
     /** The driver id this engine handles (matches {@code datasource.driver}), e.g. {@code postgresql}. */
     String driver();
 
-    /** Lists the user-visible tables/views and their columns. */
-    SchemaInfo introspect(Connection connection) throws SQLException;
+    /** Lists the user-visible tables/views/collections and their columns/fields. */
+    SchemaInfo introspect(ConnectionDetails details);
 
-    /** Returns a page of rows from a table/view. */
-    RowPage browse(Connection connection, ObjectRef ref, int offset, int limit) throws SQLException;
+    /** Returns a page of rows/documents from a table/view/collection. */
+    RowPage browse(ConnectionDetails details, ObjectRef ref, int offset, int limit);
 
-    /** Runs an arbitrary query. In {@link QueryMode#READ} the connection is held read-only. */
-    QueryResult runQuery(Connection connection, String sql, QueryMode mode) throws SQLException;
+    /** Runs an arbitrary query/command. In {@link QueryMode#READ} writes are rejected at the engine. */
+    QueryResult runQuery(ConnectionDetails details, String query, QueryMode mode);
 
     /** Whether this engine can technically enforce read-only at the connection/driver level. */
     boolean canEnforceReadOnly();

@@ -3,13 +3,16 @@ package com.janne6565.stratabackend.engine.mysql;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.janne6565.stratabackend.common.EngineException;
 import com.janne6565.stratabackend.engine.ColumnInfo;
+import com.janne6565.stratabackend.engine.ConnectionDetails;
 import com.janne6565.stratabackend.engine.ObjectRef;
 import com.janne6565.stratabackend.engine.QueryMode;
 import com.janne6565.stratabackend.engine.QueryResult;
 import com.janne6565.stratabackend.engine.RowPage;
 import com.janne6565.stratabackend.engine.SchemaInfo;
 import com.janne6565.stratabackend.engine.TableInfo;
+import com.janne6565.stratabackend.engine.jdbc.JdbcConnectionPool;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -29,11 +32,16 @@ class MySqlEngineTest {
     static final MySQLContainer<?> MYSQL =
             new MySQLContainer<>(DockerImageName.parse("mysql:8.4"));
 
-    private final MySqlEngine engine = new MySqlEngine();
+    private final MySqlEngine engine = new MySqlEngine(new JdbcConnectionPool());
 
-    private Connection connection() throws SQLException {
-        return DriverManager.getConnection(
-                MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword());
+    private ConnectionDetails details() {
+        return new ConnectionDetails(
+                "mysql",
+                MYSQL.getHost(),
+                MYSQL.getFirstMappedPort(),
+                MYSQL.getDatabaseName(),
+                MYSQL.getUsername(),
+                MYSQL.getPassword());
     }
 
     @BeforeAll
@@ -47,70 +55,58 @@ class MySqlEngineTest {
         }
     }
 
-    private String database() {
-        return MYSQL.getDatabaseName();
+    @Test
+    void introspectFindsTableWithPrimaryKey() {
+        SchemaInfo schema = engine.introspect(details());
+
+        TableInfo customer =
+                schema.tables().stream()
+                        .filter(t -> t.name().equals("customer"))
+                        .findFirst()
+                        .orElseThrow();
+        assertThat(customer.columns()).extracting(ColumnInfo::name).contains("id", "name");
+        ColumnInfo id =
+                customer.columns().stream()
+                        .filter(col -> col.name().equals("id"))
+                        .findFirst()
+                        .orElseThrow();
+        assertThat(id.primaryKey()).isTrue();
     }
 
     @Test
-    void introspectFindsTableWithPrimaryKey() throws SQLException {
-        try (Connection c = connection()) {
-            SchemaInfo schema = engine.introspect(c);
+    void browseReturnsRows() {
+        RowPage page = engine.browse(details(), new ObjectRef(MYSQL.getDatabaseName(), "customer"), 0, 2);
 
-            TableInfo customer =
-                    schema.tables().stream()
-                            .filter(t -> t.name().equals("customer"))
-                            .findFirst()
-                            .orElseThrow();
-            assertThat(customer.columns()).extracting(ColumnInfo::name).contains("id", "name");
-            ColumnInfo id =
-                    customer.columns().stream()
-                            .filter(col -> col.name().equals("id"))
-                            .findFirst()
-                            .orElseThrow();
-            assertThat(id.primaryKey()).isTrue();
-        }
+        assertThat(page.columns()).contains("id", "name");
+        assertThat(page.rows()).hasSize(2);
     }
 
     @Test
-    void browseReturnsRows() throws SQLException {
-        try (Connection c = connection()) {
-            RowPage page = engine.browse(c, new ObjectRef(database(), "customer"), 0, 2);
+    void readQueryReturnsRows() {
+        QueryResult result =
+                engine.runQuery(details(), "SELECT name FROM customer ORDER BY name", QueryMode.READ);
 
-            assertThat(page.columns()).contains("id", "name");
-            assertThat(page.rows()).hasSize(2);
-        }
+        assertThat(result.rows()).hasSize(3);
+        assertThat(result.rows().get(0).get(0)).isEqualTo("Ada");
     }
 
     @Test
-    void readQueryReturnsRows() throws SQLException {
-        try (Connection c = connection()) {
-            QueryResult result =
-                    engine.runQuery(c, "SELECT name FROM customer ORDER BY name", QueryMode.READ);
-
-            assertThat(result.rows()).hasSize(3);
-            assertThat(result.rows().get(0).get(0)).isEqualTo("Ada");
-        }
+    void readModeRejectsWrites() {
+        assertThatThrownBy(
+                        () ->
+                                engine.runQuery(
+                                        details(),
+                                        "INSERT INTO customer (name) VALUES ('Mallory')",
+                                        QueryMode.READ))
+                .isInstanceOf(EngineException.class);
     }
 
     @Test
-    void readModeRejectsWrites() throws SQLException {
-        try (Connection c = connection()) {
-            assertThatThrownBy(
-                            () ->
-                                    engine.runQuery(
-                                            c, "INSERT INTO customer (name) VALUES ('Mallory')", QueryMode.READ))
-                    .isInstanceOf(SQLException.class);
-        }
-    }
+    void writeModeAllowsWrites() {
+        QueryResult result =
+                engine.runQuery(
+                        details(), "INSERT INTO customer (name) VALUES ('Dennis')", QueryMode.WRITE);
 
-    @Test
-    void writeModeAllowsWrites() throws SQLException {
-        try (Connection c = connection()) {
-            QueryResult result =
-                    engine.runQuery(
-                            c, "INSERT INTO customer (name) VALUES ('Dennis')", QueryMode.WRITE);
-
-            assertThat(result.updateCount()).isEqualTo(1);
-        }
+        assertThat(result.updateCount()).isEqualTo(1);
     }
 }

@@ -15,6 +15,7 @@ import com.janne6565.stratabackend.auth.User;
 import com.janne6565.stratabackend.catalog.Datasource;
 import com.janne6565.stratabackend.catalog.DatasourceRepository;
 import com.janne6565.stratabackend.common.BadRequestException;
+import com.janne6565.stratabackend.engine.jdbc.JdbcConnectionPool;
 import com.janne6565.stratabackend.engine.postgres.PostgresEngine;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -61,10 +62,19 @@ class BrowseServiceTest {
 
     @BeforeEach
     void setUp() {
-        ConnectionProvider provider =
-                ds -> open(); // bypasses the Kubernetes credential machinery
-        EngineRegistry registry = new EngineRegistry(List.of(new PostgresEngine()));
-        service = new BrowseService(provider, registry, datasourceRepository, auditService);
+        // Resolve straight to the container — bypasses the Kubernetes credential machinery.
+        ConnectionDetailsResolver resolver =
+                ds ->
+                        new ConnectionDetails(
+                                "postgresql",
+                                POSTGRES.getHost(),
+                                POSTGRES.getFirstMappedPort(),
+                                POSTGRES.getDatabaseName(),
+                                POSTGRES.getUsername(),
+                                POSTGRES.getPassword());
+        EngineRegistry registry =
+                new EngineRegistry(List.of(new PostgresEngine(new JdbcConnectionPool())));
+        service = new BrowseService(resolver, registry, datasourceRepository, auditService);
 
         datasource = new Datasource();
         datasource.setId(UUID.randomUUID());

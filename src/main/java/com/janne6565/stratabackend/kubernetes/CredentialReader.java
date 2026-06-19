@@ -6,6 +6,7 @@ import com.janne6565.stratabackend.catalog.Datasource;
 import com.janne6565.stratabackend.common.BadRequestException;
 import com.janne6565.stratabackend.common.NotFoundException;
 import com.janne6565.stratabackend.engine.ConnectionDetails;
+import com.janne6565.stratabackend.engine.ConnectionDetailsResolver;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -22,7 +23,7 @@ import org.springframework.stereotype.Component;
  * pointer-only resolution and must be supplied via a manual override.
  */
 @Component
-public class CredentialReader {
+public class CredentialReader implements ConnectionDetailsResolver {
 
     private final KubernetesClient client;
 
@@ -30,7 +31,8 @@ public class CredentialReader {
         this.client = client;
     }
 
-    public ConnectionDetails read(Datasource datasource) {
+    @Override
+    public ConnectionDetails resolve(Datasource datasource) {
         if (datasource.getServiceName() == null || datasource.getServicePort() == null) {
             throw new BadRequestException(
                     "Datasource has no backing service; cannot determine host/port");
