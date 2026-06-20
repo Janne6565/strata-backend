@@ -7,6 +7,7 @@ import com.janne6565.stratabackend.model.core.QueryResult;
 import com.janne6565.stratabackend.model.core.RowPage;
 import com.janne6565.stratabackend.model.core.SchemaInfo;
 import com.janne6565.stratabackend.model.exception.EngineException;
+import java.util.Optional;
 
 /**
  * Per-engine adapter SPI (ARCHITECTURE.md §9). Each implementation knows how to introspect, browse
@@ -38,4 +39,14 @@ public interface DatabaseEngine {
 
     /** Whether this engine can technically enforce read-only at the connection/driver level. */
     boolean canEnforceReadOnly();
+
+    /**
+     * Best-effort live resource telemetry for the database (active connections, on-disk size,
+     * object count). Opt-in per adapter — the default returns {@link Optional#empty()} for engines
+     * that don't expose it. Implementations must not throw for "unsupported"; reserve {@link
+     * EngineException} for an actual sampling failure (the caller treats it as "unavailable").
+     */
+    default Optional<EngineMetrics> sampleMetrics(ConnectionDetails details) {
+        return Optional.empty();
+    }
 }

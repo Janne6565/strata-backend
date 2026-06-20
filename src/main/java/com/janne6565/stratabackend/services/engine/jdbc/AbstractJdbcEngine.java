@@ -10,6 +10,7 @@ import com.janne6565.stratabackend.model.core.SchemaInfo;
 import com.janne6565.stratabackend.model.core.TableInfo;
 import com.janne6565.stratabackend.model.exception.EngineException;
 import com.janne6565.stratabackend.services.engine.DatabaseEngine;
+import com.janne6565.stratabackend.services.engine.EngineMetrics;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -19,6 +20,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -57,6 +59,60 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
     @Override
     public boolean canEnforceReadOnly() {
         return true;
+    }
+
+    /**
+     * SQL returning the active connection count for this database in column 1; {@code null} skips.
+     */
+    protected String connectionsSql() {
+        return null;
+    }
+
+    /**
+     * SQL returning the on-disk size in bytes for this database in column 1; {@code null} skips.
+     */
+    protected String dataSizeSql() {
+        return null;
+    }
+
+    /**
+     * SQL returning the user-object (table/view) count for this database in column 1; null skips.
+     */
+    protected String objectCountSql() {
+        return null;
+    }
+
+    @Override
+    public Optional<EngineMetrics> sampleMetrics(ConnectionDetails details) {
+        try (Connection connection = connection(details)) {
+            Long connections = scalar(connection, connectionsSql());
+            Long dataSize = scalar(connection, dataSizeSql());
+            Long objects = scalar(connection, objectCountSql());
+            return Optional.of(
+                    new EngineMetrics(
+                            connections == null ? null : connections.intValue(),
+                            dataSize,
+                            objects == null ? null : objects.intValue()));
+        } catch (SQLException ex) {
+            throw new EngineException("Metrics failed: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Runs a single-value numeric query, returning {@code null} when the SQL or the result is null.
+     */
+    private Long scalar(Connection connection, String sql) throws SQLException {
+        if (sql == null) {
+            return null;
+        }
+        try (Statement statement = connection.createStatement();
+                ResultSet rs = statement.executeQuery(sql)) {
+            if (rs.next()) {
+                long value = rs.getLong(1);
+                return rs.wasNull() ? null : value;
+            }
+            return null;
+        }
     }
 
     private Connection connection(ConnectionDetails details) throws SQLException {

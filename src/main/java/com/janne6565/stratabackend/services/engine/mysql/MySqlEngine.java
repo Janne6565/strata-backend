@@ -52,4 +52,20 @@ public class MySqlEngine extends AbstractJdbcEngine {
     protected boolean databaseIsCatalog() {
         return true;
     }
+
+    @Override
+    protected String connectionsSql() {
+        return "SELECT count(*) FROM information_schema.processlist WHERE db = DATABASE()";
+    }
+
+    @Override
+    protected String dataSizeSql() {
+        return "SELECT COALESCE(SUM(data_length + index_length), 0)"
+                + " FROM information_schema.tables WHERE table_schema = DATABASE()";
+    }
+
+    @Override
+    protected String objectCountSql() {
+        return "SELECT count(*) FROM information_schema.tables WHERE table_schema = DATABASE()";
+    }
 }

@@ -10,7 +10,9 @@ import com.janne6565.stratabackend.model.exception.ConflictException;
 import com.janne6565.stratabackend.model.exception.NotFoundException;
 import com.janne6565.stratabackend.repository.DatasourceRepository;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -66,6 +68,27 @@ public class CatalogService {
         ds.setFirstSeenAt(now);
         ds.setLastSeenAt(now);
         ds.setCreatedAt(now);
+        return DatasourceResponse.from(datasourceRepository.save(ds));
+    }
+
+    /**
+     * Renames a datasource's display name and records it as a manual override, so a later rescan
+     * preserves it (discovery only refreshes unlocked fields).
+     */
+    @Transactional
+    public DatasourceResponse rename(UUID id, String displayName) {
+        DatasourceEntity ds =
+                datasourceRepository
+                        .findById(id)
+                        .orElseThrow(
+                                () -> new NotFoundException("DatasourceEntity not found: " + id));
+        ds.setDisplayName(displayName);
+        Map<String, String> overrides =
+                ds.getManualOverrides() == null
+                        ? new HashMap<>()
+                        : new HashMap<>(ds.getManualOverrides());
+        overrides.put("displayName", displayName);
+        ds.setManualOverrides(overrides);
         return DatasourceResponse.from(datasourceRepository.save(ds));
     }
 

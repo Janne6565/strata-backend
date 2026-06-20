@@ -45,4 +45,20 @@ public class PostgresEngine extends AbstractJdbcEngine {
     protected boolean databaseIsCatalog() {
         return false;
     }
+
+    @Override
+    protected String connectionsSql() {
+        return "SELECT count(*) FROM pg_stat_activity WHERE datname = current_database()";
+    }
+
+    @Override
+    protected String dataSizeSql() {
+        return "SELECT pg_database_size(current_database())";
+    }
+
+    @Override
+    protected String objectCountSql() {
+        return "SELECT count(*) FROM information_schema.tables"
+                + " WHERE table_schema NOT IN ('pg_catalog', 'information_schema')";
+    }
 }

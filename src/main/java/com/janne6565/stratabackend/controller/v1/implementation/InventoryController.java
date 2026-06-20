@@ -2,6 +2,7 @@ package com.janne6565.stratabackend.controller.v1.implementation;
 
 import com.janne6565.stratabackend.controller.v1.schema.InventoryApi;
 import com.janne6565.stratabackend.model.action.ManualAddRequest;
+import com.janne6565.stratabackend.model.action.RenameRequest;
 import com.janne6565.stratabackend.model.core.DatasourceResponse;
 import com.janne6565.stratabackend.model.core.DiscoverySummary;
 import com.janne6565.stratabackend.security.authorization.NeedsValidation;
@@ -48,6 +49,12 @@ public class InventoryController implements InventoryApi {
     @NeedsValidation(Operation.DB_REGISTER)
     public DatasourceResponse manualAdd(ManualAddRequest request) {
         return catalogService.manualAdd(request, currentUser.require());
+    }
+
+    @Override
+    @NeedsValidation(Operation.DB_RENAME)
+    public DatasourceResponse rename(@ResourceId UUID id, RenameRequest request) {
+        return catalogService.rename(id, request.displayName());
     }
 
     @Override

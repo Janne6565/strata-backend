@@ -27,6 +27,12 @@ public class DiscoveryPolicies {
         return isAdmin(caller);
     }
 
+    @Validates(Operation.DB_RENAME)
+    public boolean canRename(ResourceResolver resolver, Object referenceId, UserEntity caller) {
+        // The display name is shared catalog metadata, so editing it is administrative.
+        return isAdmin(caller);
+    }
+
     private boolean isAdmin(UserEntity caller) {
         return caller.getRole().isAtLeast(Role.ADMIN);
     }

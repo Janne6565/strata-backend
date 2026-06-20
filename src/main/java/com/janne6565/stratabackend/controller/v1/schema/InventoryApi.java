@@ -1,6 +1,7 @@
 package com.janne6565.stratabackend.controller.v1.schema;
 
 import com.janne6565.stratabackend.model.action.ManualAddRequest;
+import com.janne6565.stratabackend.model.action.RenameRequest;
 import com.janne6565.stratabackend.model.core.DatasourceResponse;
 import com.janne6565.stratabackend.model.core.DiscoverySummary;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,6 +43,10 @@ public interface InventoryApi {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     DatasourceResponse manualAdd(@Valid @RequestBody ManualAddRequest request);
+
+    @Operation(summary = "Rename a datasource (set its display name)")
+    @PatchMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    DatasourceResponse rename(@PathVariable UUID id, @Valid @RequestBody RenameRequest request);
 
     @Operation(summary = "Remove a datasource from the catalog")
     @DeleteMapping("/{id}")

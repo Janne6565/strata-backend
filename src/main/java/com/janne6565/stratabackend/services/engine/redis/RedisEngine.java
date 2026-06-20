@@ -10,6 +10,7 @@ import com.janne6565.stratabackend.model.core.SchemaInfo;
 import com.janne6565.stratabackend.model.core.TableInfo;
 import com.janne6565.stratabackend.model.exception.EngineException;
 import com.janne6565.stratabackend.services.engine.DatabaseEngine;
+import com.janne6565.stratabackend.services.engine.EngineMetrics;
 import io.lettuce.core.KeyScanCursor;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
@@ -26,6 +27,7 @@ import jakarta.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
@@ -149,6 +151,52 @@ public class RedisEngine implements DatabaseEngine {
             throw ex;
         } catch (RuntimeException ex) {
             throw new EngineException("Query failed: " + ex.getMessage());
+        }
+    }
+
+    @Override
+    public Optional<EngineMetrics> sampleMetrics(ConnectionDetails details) {
+        try {
+            RedisCommands<String, String> sync = commands(details);
+            String info = sync.info();
+            Integer connections = intValue(infoField(info, "connected_clients"));
+            Long usedMemory = longValue(infoField(info, "used_memory"));
+            Long keys = sync.dbsize();
+            return Optional.of(
+                    new EngineMetrics(
+                            connections, usedMemory, keys == null ? null : keys.intValue()));
+        } catch (RuntimeException ex) {
+            throw new EngineException("Metrics failed: " + ex.getMessage());
+        }
+    }
+
+    /** Reads a {@code field:value} line from a Redis INFO dump (CRLF-separated). */
+    private String infoField(String info, String field) {
+        if (info == null) {
+            return null;
+        }
+        for (String line : info.split("\\r?\\n")) {
+            int sep = line.indexOf(':');
+            if (sep > 0 && line.substring(0, sep).equals(field)) {
+                return line.substring(sep + 1).trim();
+            }
+        }
+        return null;
+    }
+
+    private Integer intValue(String value) {
+        try {
+            return value == null ? null : Integer.valueOf(value);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private Long longValue(String value) {
+        try {
+            return value == null ? null : Long.valueOf(value);
+        } catch (NumberFormatException ex) {
+            return null;
         }
     }
 

@@ -10,6 +10,7 @@ import com.janne6565.stratabackend.model.core.SchemaInfo;
 import com.janne6565.stratabackend.model.core.TableInfo;
 import com.janne6565.stratabackend.model.exception.EngineException;
 import com.janne6565.stratabackend.services.engine.DatabaseEngine;
+import com.janne6565.stratabackend.services.engine.EngineMetrics;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.bson.Document;
@@ -115,6 +117,37 @@ public class MongoEngine implements DatabaseEngine {
         } catch (RuntimeException ex) {
             throw new EngineException("Query failed: " + ex.getMessage());
         }
+    }
+
+    @Override
+    public Optional<EngineMetrics> sampleMetrics(ConnectionDetails details) {
+        try {
+            MongoDatabase db = database(details);
+            Document stats = db.runCommand(new Document("dbStats", 1));
+            Long dataSize = asLong(stats.get("dataSize"));
+            Integer collections = asInt(stats.get("collections"));
+            // connections live in serverStatus, which may be denied for non-admin users.
+            Integer connections = null;
+            try {
+                Document server = db.runCommand(new Document("serverStatus", 1));
+                if (server.get("connections") instanceof Document conn) {
+                    connections = asInt(conn.get("current"));
+                }
+            } catch (RuntimeException ignored) {
+                // best-effort: leave connections null when serverStatus isn't permitted
+            }
+            return Optional.of(new EngineMetrics(connections, dataSize, collections));
+        } catch (RuntimeException ex) {
+            throw new EngineException("Metrics failed: " + ex.getMessage());
+        }
+    }
+
+    private Long asLong(Object value) {
+        return value instanceof Number number ? number.longValue() : null;
+    }
+
+    private Integer asInt(Object value) {
+        return value instanceof Number number ? number.intValue() : null;
     }
 
     private void guardReadOnly(String name, Document command) {
