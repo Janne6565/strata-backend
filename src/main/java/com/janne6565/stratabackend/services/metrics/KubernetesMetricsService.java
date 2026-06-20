@@ -247,9 +247,17 @@ public class KubernetesMetricsService {
     /**
      * Sums {@code usedBytes} across PVC-backed volumes of the named pods in a kubelet Summary
      * document. Non-PVC volumes (emptyDir, configmaps, …) are excluded so the figure reflects
-     * persisted data. Returns null when no matching PVC volume is present.
+     * persisted data.
+     *
+     * <p>Volumes whose {@code capacityBytes} equals the node's root filesystem capacity are
+     * skipped: that is the signature of hostPath / {@code local-path} storage, where the kubelet
+     * reports the whole node disk for every PVC rather than the volume's own data — a misleading
+     * figure. Only dedicated volumes (CSI / block) are counted. Returns null when no such volume is
+     * present (which is the common case on local-path clusters, surfaced as "—" rather than a wrong
+     * size).
      */
     static Long sumPvcUsedBytes(JsonNode summary, String namespace, Set<String> podNames) {
+        long nodeFsCapacity = summary.path("node").path("fs").path("capacityBytes").asLong(-1);
         long total = 0;
         boolean found = false;
         for (JsonNode pod : summary.path("pods")) {
@@ -261,6 +269,10 @@ public class KubernetesMetricsService {
             for (JsonNode volume : pod.path("volume")) {
                 if (volume.path("pvcRef").isMissingNode()) {
                     continue;
+                }
+                long capacity = volume.path("capacityBytes").asLong(-1);
+                if (capacity > 0 && capacity == nodeFsCapacity) {
+                    continue; // hostPath/local-path: reflects the node disk, not the volume
                 }
                 JsonNode used = volume.path("usedBytes");
                 if (used.isNumber()) {

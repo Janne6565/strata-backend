@@ -59,6 +59,43 @@ class KubernetesMetricsServiceTest {
     }
 
     @Test
+    void skipsLocalPathVolumesThatShareTheNodeFilesystem() throws Exception {
+        JsonNode summary =
+                summary(
+                        """
+                        {"node":{"fs":{"capacityBytes":1000}},
+                         "pods":[
+                           {"podRef":{"name":"influx-0","namespace":"cosy"},
+                            "volume":[
+                              {"name":"data","usedBytes":900,"capacityBytes":1000,"pvcRef":{"name":"influxdb-data"}},
+                              {"name":"config","usedBytes":900,"capacityBytes":1000,"pvcRef":{"name":"influxdb-config"}}
+                            ]}
+                        ]}
+                        """);
+
+        // Both volumes report the node-fs capacity (local-path) → skipped → null, not a bogus size.
+        assertThat(KubernetesMetricsService.sumPvcUsedBytes(summary, "cosy", Set.of("influx-0")))
+                .isNull();
+    }
+
+    @Test
+    void countsDedicatedVolumesWhoseCapacityDiffersFromTheNodeFs() throws Exception {
+        JsonNode summary =
+                summary(
+                        """
+                        {"node":{"fs":{"capacityBytes":1000000}},
+                         "pods":[
+                           {"podRef":{"name":"db-0","namespace":"cosy"},
+                            "volume":[{"name":"data","usedBytes":4096,"capacityBytes":10000,"pvcRef":{"name":"data-db-0"}}]}
+                        ]}
+                        """);
+
+        // Dedicated (CSI) volume: capacity != node fs → counted.
+        assertThat(KubernetesMetricsService.sumPvcUsedBytes(summary, "cosy", Set.of("db-0")))
+                .isEqualTo(4096L);
+    }
+
+    @Test
     void returnsNullWhenNoPvcVolumeMatches() throws Exception {
         JsonNode summary =
                 summary(
