@@ -62,7 +62,9 @@ public class CredentialReader implements ConnectionDetailsResolver {
     private Map<String, String> resolveValues(DatasourceEntity datasource) {
         CredentialResolution resolution = datasource.getCredentialResolution();
         if (resolution == null) {
-            throw new BadRequestException("DatasourceEntity has no resolved credentials");
+            // No detector-resolved credentials → connect anonymously (e.g. an auth-less
+            // engine like Loki). Engines that do require auth surface their own failure.
+            return Map.of();
         }
         Map<String, String> values = new HashMap<>();
         for (CredentialSource source : resolution.sources()) {

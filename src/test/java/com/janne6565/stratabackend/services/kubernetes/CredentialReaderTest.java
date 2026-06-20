@@ -71,6 +71,25 @@ class CredentialReaderTest {
     }
 
     @Test
+    void connectsAnonymouslyWhenThereIsNoCredentialResolution() {
+        // Auth-less engine (e.g. Loki): no detector credentials → null resolution.
+        DatasourceEntity ds = new DatasourceEntity();
+        ds.setNamespace("cosy");
+        ds.setWorkloadKind("Deployment");
+        ds.setWorkloadName("cosy-loki");
+        ds.setServiceName("cosy-loki");
+        ds.setServicePort(3100);
+        ds.setDriver("loki");
+
+        ConnectionDetails details = reader.resolve(ds);
+
+        assertThat(details.username()).isNull();
+        assertThat(details.password()).isNull();
+        assertThat(details.host()).isEqualTo("cosy-loki.cosy.svc.cluster.local");
+        assertThat(details.port()).isEqualTo(3100);
+    }
+
+    @Test
     void requiresManualOverrideForLegacyLiteralWithoutEnvVarName() {
         // A resolution persisted before LITERAL sources recorded the env var name.
         DatasourceEntity ds =
