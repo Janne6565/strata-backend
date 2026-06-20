@@ -80,6 +80,12 @@ public class MetricsService {
     private ResourceMetricsResponse collect(DatasourceEntity datasource) {
         PodMetricsSummary k8s = kubernetesMetricsService.sample(datasource).orElse(null);
         EngineMetrics db = sampleDatabase(datasource);
+        // Prefer the engine's own size; fall back to the backing PVC's on-disk usage for engines
+        // that can't report it (e.g. Loki, InfluxDB).
+        Long dataSizeBytes = db == null ? null : db.dataSizeBytes();
+        if (dataSizeBytes == null && k8s != null) {
+            dataSizeBytes = k8s.volumeUsedBytes();
+        }
         return new ResourceMetricsResponse(
                 datasource.getId(),
                 k8s == null ? null : k8s.cpuPercent(),
@@ -88,7 +94,7 @@ public class MetricsService {
                 k8s == null ? null : k8s.podsReady(),
                 k8s == null ? null : k8s.podsDesired(),
                 db == null ? null : db.connections(),
-                db == null ? null : db.dataSizeBytes(),
+                dataSizeBytes,
                 db == null ? null : db.objectCount());
     }
 

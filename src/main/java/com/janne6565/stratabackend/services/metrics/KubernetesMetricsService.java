@@ -1,7 +1,10 @@
 package com.janne6565.stratabackend.services.metrics;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -9,9 +12,12 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.metrics.v1beta1.ContainerMetrics;
 import io.fabric8.kubernetes.api.model.metrics.v1beta1.PodMetrics;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +34,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class KubernetesMetricsService {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private final KubernetesClient client;
 
     /** The Kubernetes-sourced sub-metrics; any field may be null when its source is unavailable. */
@@ -35,6 +43,7 @@ public class KubernetesMetricsService {
             Double cpuPercent,
             Double memoryPercent,
             Long memoryUsageBytes,
+            Long volumeUsedBytes,
             Integer podsReady,
             Integer podsDesired) {}
 
@@ -168,12 +177,99 @@ public class KubernetesMetricsService {
                 log.debug("metrics-server unavailable in {}: {}", namespace, ex.getMessage());
             }
         }
+        Long volumeUsedBytes = sampleVolumeUsedBytes(namespace, workload.selector());
         return new PodMetricsSummary(
                 cpuPercent,
                 memoryPercent,
                 memoryUsageBytes,
+                volumeUsedBytes,
                 workload.podsReady(),
                 workload.podsDesired());
+    }
+
+    /**
+     * On-disk size of the workload's PVC-backed volumes, summed across its pods. Sourced from the
+     * kubelet Summary API ({@code /nodes/<node>/proxy/stats/summary}) — the only place that reports
+     * live volume <em>usage</em> (metrics-server and the PVC status only expose capacity). Used as
+     * the {@code dataSizeBytes} fallback for engines that can't report their own size (e.g. Loki,
+     * InfluxDB). Best-effort: any failure (no {@code nodes/proxy} permission, kubelet unreachable)
+     * yields null.
+     */
+    private Long sampleVolumeUsedBytes(String namespace, Map<String, String> selector) {
+        if (selector == null || selector.isEmpty()) {
+            return null;
+        }
+        try {
+            List<Pod> pods =
+                    client.pods().inNamespace(namespace).withLabels(selector).list().getItems();
+            if (pods == null || pods.isEmpty()) {
+                return null;
+            }
+            Map<String, Set<String>> podNamesByNode = new HashMap<>();
+            for (Pod pod : pods) {
+                String node = pod.getSpec() == null ? null : pod.getSpec().getNodeName();
+                if (node == null || pod.getMetadata() == null) {
+                    continue;
+                }
+                podNamesByNode
+                        .computeIfAbsent(node, k -> new HashSet<>())
+                        .add(pod.getMetadata().getName());
+            }
+            long total = 0;
+            boolean found = false;
+            for (Map.Entry<String, Set<String>> entry : podNamesByNode.entrySet()) {
+                Long bytes = volumeUsedBytesOnNode(entry.getKey(), namespace, entry.getValue());
+                if (bytes != null) {
+                    total += bytes;
+                    found = true;
+                }
+            }
+            return found ? total : null;
+        } catch (RuntimeException ex) {
+            log.debug("PVC volume stats unavailable in {}: {}", namespace, ex.getMessage());
+            return null;
+        }
+    }
+
+    private Long volumeUsedBytesOnNode(String node, String namespace, Set<String> podNames) {
+        try {
+            String body = client.raw("/api/v1/nodes/" + node + "/proxy/stats/summary");
+            if (body == null || body.isBlank()) {
+                return null;
+            }
+            return sumPvcUsedBytes(MAPPER.readTree(body), namespace, podNames);
+        } catch (Exception ex) {
+            log.debug("kubelet volume stats unavailable on node {}: {}", node, ex.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Sums {@code usedBytes} across PVC-backed volumes of the named pods in a kubelet Summary
+     * document. Non-PVC volumes (emptyDir, configmaps, …) are excluded so the figure reflects
+     * persisted data. Returns null when no matching PVC volume is present.
+     */
+    static Long sumPvcUsedBytes(JsonNode summary, String namespace, Set<String> podNames) {
+        long total = 0;
+        boolean found = false;
+        for (JsonNode pod : summary.path("pods")) {
+            JsonNode ref = pod.path("podRef");
+            if (!namespace.equals(ref.path("namespace").asText())
+                    || !podNames.contains(ref.path("name").asText())) {
+                continue;
+            }
+            for (JsonNode volume : pod.path("volume")) {
+                if (volume.path("pvcRef").isMissingNode()) {
+                    continue;
+                }
+                JsonNode used = volume.path("usedBytes");
+                if (used.isNumber()) {
+                    total += used.asLong();
+                    found = true;
+                }
+            }
+        }
+        return found ? total : null;
     }
 
     /** Resolves a {@link Quantity} to its base-unit amount: cores for CPU, bytes for memory. */
