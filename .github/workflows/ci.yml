@@ -73,14 +73,14 @@ jobs:
           # Write-scoped SSH deploy key registered on strata-deployment.
           ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Install kustomize
-        run: |
-          curl -sSL "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
-          sudo mv kustomize /usr/local/bin/
-
       - name: Bump backend image tag
         working-directory: ${{ env.OVERLAY_PATH }}
-        run: kustomize edit set image ${{ env.IMAGE }}=${{ env.IMAGE }}:${{ needs.deliver.outputs.tag }}
+        # yq is preinstalled on GitHub-hosted runners — avoids the flaky
+        # kustomize installer. Sets newTag on the matching images[] entry.
+        env:
+          IMAGE: ${{ env.IMAGE }}
+          TAG: ${{ needs.deliver.outputs.tag }}
+        run: yq -i '(.images[] | select(.name == strenv(IMAGE)) | .newTag) = strenv(TAG)' kustomization.yaml
 
       - name: Commit and push
         run: |
