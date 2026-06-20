@@ -42,3 +42,16 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+# Actuator: expose only health (with k8s liveness/readiness probe groups) over HTTP;
+# other endpoints stay off the web surface. Health details are hidden from anonymous callers.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized

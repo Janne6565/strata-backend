@@ -42,6 +42,13 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
     /** Cap on rows materialised from an ad-hoc query result, to bound memory. */
     protected static final int MAX_QUERY_ROWS = 1000;
 
+    /**
+     * Per-statement wall-clock cap. Without it a slow or hostile query (e.g. the query console, or
+     * a {@code pg_sleep}) would hold its pooled connection indefinitely and eventually starve the
+     * pool.
+     */
+    protected static final int QUERY_TIMEOUT_SECONDS = 30;
+
     private final JdbcConnectionPool connectionPool;
 
     protected AbstractJdbcEngine(JdbcConnectionPool connectionPool) {
@@ -120,7 +127,7 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
         if (sql == null) {
             return null;
         }
-        try (Statement statement = connection.createStatement();
+        try (Statement statement = statement(connection);
                 ResultSet rs = statement.executeQuery(sql)) {
             if (rs.next()) {
                 long value = rs.getLong(1);
@@ -132,6 +139,20 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
 
     private Connection connection(ConnectionDetails details) throws SQLException {
         return connectionPool.connection(jdbcUrl(details), details.username(), details.password());
+    }
+
+    /** Creates a statement with the shared query timeout applied. */
+    private Statement statement(Connection connection) throws SQLException {
+        Statement statement = connection.createStatement();
+        statement.setQueryTimeout(QUERY_TIMEOUT_SECONDS);
+        return statement;
+    }
+
+    /** Prepares a statement with the shared query timeout applied. */
+    private PreparedStatement prepared(Connection connection, String sql) throws SQLException {
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setQueryTimeout(QUERY_TIMEOUT_SECONDS);
+        return statement;
     }
 
     @Override
@@ -205,7 +226,7 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
             return Map.of();
         }
         Map<String, Long> estimates = new HashMap<>();
-        try (Statement statement = connection.createStatement();
+        try (Statement statement = statement(connection);
                 ResultSet rs = statement.executeQuery(sql)) {
             while (rs.next()) {
                 long value = rs.getLong(3);
@@ -305,7 +326,7 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
 
         sql.append(" LIMIT ? OFFSET ?");
 
-        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+        try (PreparedStatement ps = prepared(connection, sql.toString())) {
             int index = 1;
             for (int i = 0; i < bindValues.size(); i++) {
                 ps.setObject(index++, bindValues.get(i), bindTypes.get(i));
@@ -348,7 +369,7 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
         boolean priorReadOnly = connection.isReadOnly();
         connection.setAutoCommit(false);
         connection.setReadOnly(true);
-        try (Statement statement = connection.createStatement()) {
+        try (Statement statement = statement(connection)) {
             QueryResult result = execute(statement, sql);
             connection.rollback();
             return result;
@@ -364,7 +385,7 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
     private QueryResult runWritable(Connection connection, String sql) throws SQLException {
         boolean priorReadOnly = connection.isReadOnly();
         connection.setReadOnly(false);
-        try (Statement statement = connection.createStatement()) {
+        try (Statement statement = statement(connection)) {
             return execute(statement, sql);
         } finally {
             connection.setReadOnly(priorReadOnly);

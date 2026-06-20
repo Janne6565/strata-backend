@@ -19,10 +19,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     /**
-     * Public endpoints: login + the OpenAPI/Swagger surface used to generate the frontend client.
+     * Public endpoints: login, the OpenAPI/Swagger surface used to generate the frontend client,
+     * and the actuator health probes (k8s liveness/readiness, scraped unauthenticated). Other
+     * actuator endpoints (metrics, etc.) stay behind authentication via the catch-all rule below.
      */
     private static final String[] PUBLIC_PATHS = {
-        "/api/v1/auth/login", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+        "/api/v1/auth/login",
+        "/v3/api-docs/**",
+        "/swagger-ui/**",
+        "/swagger-ui.html",
+        "/actuator/health",
+        "/actuator/health/**"
     };
 
     @Bean

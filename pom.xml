@@ -46,6 +46,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!-- Health/readiness/liveness probes + app metrics for k8s and monitoring -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <!-- OpenAPI spec source for the frontend's Orval client (API-first contract) -->
         <dependency>
             <groupId>org.springdoc</groupId>

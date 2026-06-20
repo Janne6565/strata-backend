@@ -68,7 +68,7 @@ public class InfluxEngine implements DatabaseEngine {
             String measurementsFlux =
                     "import \"influxdata/influxdb/schema\"\n"
                             + "schema.measurements(bucket: \""
-                            + bucket
+                            + flux(bucket)
                             + "\")";
             for (String measurement : values(client, details, measurementsFlux)) {
                 tables.add(
@@ -89,11 +89,11 @@ public class InfluxEngine implements DatabaseEngine {
     public RowPage browse(ConnectionDetails details, ObjectRef ref, int offset, int limit) {
         String flux =
                 "from(bucket: \""
-                        + bucket(details)
+                        + flux(bucket(details))
                         + "\")\n"
                         + "  |> range(start: 0)\n"
                         + "  |> filter(fn: (r) => r._measurement == \""
-                        + ref.name()
+                        + flux(ref.name())
                         + "\")\n"
                         + "  |> limit(n: "
                         + Math.max(0, limit)
@@ -228,9 +228,9 @@ public class InfluxEngine implements DatabaseEngine {
         String flux =
                 "import \"influxdata/influxdb/schema\"\n"
                         + "schema.measurementFieldKeys(bucket: \""
-                        + bucket
+                        + flux(bucket)
                         + "\", measurement: \""
-                        + measurement
+                        + flux(measurement)
                         + "\")";
         List<ColumnInfo> columns = new ArrayList<>();
         columns.add(new ColumnInfo("_time", "time", false, false));
@@ -238,6 +238,18 @@ public class InfluxEngine implements DatabaseEngine {
             columns.add(new ColumnInfo(field, "field", true, false));
         }
         return columns;
+    }
+
+    /**
+     * Escapes a value for safe interpolation into a Flux double-quoted string literal: backslashes
+     * and quotes are escaped so a crafted bucket/measurement name can't break out of the string,
+     * and {@code ${} is neutralised so it isn't read as Flux string interpolation.
+     */
+    static String flux(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("${", "\\${");
     }
 
     private List<String> values(InfluxDBClient client, ConnectionDetails details, String flux) {
