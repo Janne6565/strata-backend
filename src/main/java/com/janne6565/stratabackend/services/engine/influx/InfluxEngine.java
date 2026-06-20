@@ -76,7 +76,8 @@ public class InfluxEngine implements DatabaseEngine {
                                 bucket,
                                 measurement,
                                 "MEASUREMENT",
-                                fieldColumns(client, details, bucket, measurement)));
+                                fieldColumns(client, details, bucket, measurement),
+                                null));
             }
             return new SchemaInfo(tables);
         } catch (RuntimeException ex) {

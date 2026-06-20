@@ -102,12 +102,16 @@ public class RedisEngine implements DatabaseEngine {
                         new ColumnInfo("type", "string", false, false),
                         new ColumnInfo("ttl", "long", true, false));
         String schema = "db" + dbIndex(details.database());
+        Long keyCount;
         try {
-            commands(details).ping();
+            RedisCommands<String, String> commands = commands(details);
+            commands.ping();
+            keyCount = commands.dbsize();
         } catch (RuntimeException ex) {
             throw new EngineException("Introspection failed: " + ex.getMessage());
         }
-        return new SchemaInfo(List.of(new TableInfo(schema, KEYS_OBJECT, "KEYSPACE", columns)));
+        return new SchemaInfo(
+                List.of(new TableInfo(schema, KEYS_OBJECT, "KEYSPACE", columns, keyCount)));
     }
 
     @Override

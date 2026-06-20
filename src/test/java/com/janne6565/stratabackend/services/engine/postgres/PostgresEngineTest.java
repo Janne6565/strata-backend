@@ -83,6 +83,31 @@ class PostgresEngineTest {
     }
 
     @Test
+    void introspectEstimatesRowCount() throws SQLException {
+        // Own table + ANALYZE so reltuples is populated and isolated from sibling writes.
+        try (Connection c =
+                        DriverManager.getConnection(
+                                POSTGRES.getJdbcUrl(),
+                                POSTGRES.getUsername(),
+                                POSTGRES.getPassword());
+                Statement s = c.createStatement()) {
+            s.execute("CREATE TABLE widget (id serial PRIMARY KEY)");
+            s.execute("INSERT INTO widget DEFAULT VALUES");
+            s.execute("INSERT INTO widget DEFAULT VALUES");
+            s.execute("ANALYZE widget");
+        }
+
+        SchemaInfo schema = engine.introspect(details());
+        TableInfo widget =
+                schema.tables().stream()
+                        .filter(t -> t.name().equals("widget"))
+                        .findFirst()
+                        .orElseThrow();
+
+        assertThat(widget.rowCount()).isEqualTo(2L);
+    }
+
+    @Test
     void browseReturnsRows() {
         RowPage page = engine.browse(details(), new ObjectRef("public", "customer"), 0, 2);
 

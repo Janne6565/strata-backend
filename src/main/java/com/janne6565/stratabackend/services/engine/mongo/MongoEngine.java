@@ -72,7 +72,11 @@ public class MongoEngine implements DatabaseEngine {
             MongoDatabase db = database(details);
             List<TableInfo> tables = new ArrayList<>();
             for (String name : db.listCollectionNames()) {
-                tables.add(new TableInfo(db.getName(), name, "COLLECTION", inferColumns(db, name)));
+                // estimatedDocumentCount() reads collection metadata — cheap, approximate.
+                long count = db.getCollection(name).estimatedDocumentCount();
+                tables.add(
+                        new TableInfo(
+                                db.getName(), name, "COLLECTION", inferColumns(db, name), count));
             }
             return new SchemaInfo(tables);
         } catch (RuntimeException ex) {

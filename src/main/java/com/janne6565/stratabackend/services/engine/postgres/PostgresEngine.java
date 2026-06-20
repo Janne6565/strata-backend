@@ -61,4 +61,14 @@ public class PostgresEngine extends AbstractJdbcEngine {
         return "SELECT count(*) FROM information_schema.tables"
                 + " WHERE table_schema NOT IN ('pg_catalog', 'information_schema')";
     }
+
+    @Override
+    protected String rowCountEstimateSql() {
+        // reltuples is the planner's estimate from the last ANALYZE/VACUUM; -1 means never
+        // analysed, which the caller drops. relkind r/p = ordinary/partitioned tables.
+        return "SELECT n.nspname, c.relname, c.reltuples::bigint"
+                + " FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace"
+                + " WHERE c.relkind IN ('r', 'p')"
+                + " AND n.nspname NOT IN ('pg_catalog', 'information_schema')";
+    }
 }

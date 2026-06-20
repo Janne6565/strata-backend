@@ -67,7 +67,8 @@ public class LokiEngine implements DatabaseEngine {
             for (String label : labelNames(details)) {
                 columns.add(new ColumnInfo(label, "label", true, false));
             }
-            return new SchemaInfo(List.of(new TableInfo("loki", LOGS_OBJECT, "STREAM", columns)));
+            return new SchemaInfo(
+                    List.of(new TableInfo("loki", LOGS_OBJECT, "STREAM", columns, null)));
         } catch (RuntimeException ex) {
             throw new EngineException("Introspection failed: " + ex.getMessage());
         }

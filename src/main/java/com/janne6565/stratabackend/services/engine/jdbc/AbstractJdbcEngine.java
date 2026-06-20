@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -84,6 +85,15 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
      * SQL returning the user-object (table/view) count for this database in column 1; null skips.
      */
     protected String objectCountSql() {
+        return null;
+    }
+
+    /**
+     * SQL returning, per user table, three columns — schema, table name, and an estimated row count
+     * from the engine's statistics. {@code null} skips row-count estimation (the table {@code
+     * rowCount} stays null).
+     */
+    protected String rowCountEstimateSql() {
         return null;
     }
 
@@ -160,6 +170,7 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
 
     private SchemaInfo doIntrospect(Connection connection) throws SQLException {
         DatabaseMetaData meta = connection.getMetaData();
+        Map<String, Long> rowCounts = rowCountEstimates(connection);
         List<TableInfo> tables = new ArrayList<>();
         try (ResultSet rs = meta.getTables(null, null, "%", new String[] {"TABLE", "VIEW"})) {
             while (rs.next()) {
@@ -176,10 +187,39 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
                                 schema,
                                 name,
                                 rs.getString("TABLE_TYPE"),
-                                columns(meta, schema, name)));
+                                columns(meta, schema, name),
+                                rowCounts.get(estimateKey(schema, name))));
             }
         }
         return new SchemaInfo(tables);
+    }
+
+    /**
+     * Estimated row counts keyed by {@link #estimateKey}. Empty when the dialect supplies no {@link
+     * #rowCountEstimateSql}. Negative or null estimates (e.g. a never-analysed Postgres table whose
+     * {@code reltuples} is -1) are dropped, leaving that table's count unknown.
+     */
+    private Map<String, Long> rowCountEstimates(Connection connection) throws SQLException {
+        String sql = rowCountEstimateSql();
+        if (sql == null) {
+            return Map.of();
+        }
+        Map<String, Long> estimates = new HashMap<>();
+        try (Statement statement = connection.createStatement();
+                ResultSet rs = statement.executeQuery(sql)) {
+            while (rs.next()) {
+                long value = rs.getLong(3);
+                if (rs.wasNull() || value < 0) {
+                    continue;
+                }
+                estimates.put(estimateKey(rs.getString(1), rs.getString(2)), value);
+            }
+        }
+        return estimates;
+    }
+
+    private static String estimateKey(String schema, String name) {
+        return schema + '\u0000' + name;
     }
 
     private List<ColumnInfo> columns(DatabaseMetaData meta, String schema, String table)

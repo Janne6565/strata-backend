@@ -68,4 +68,11 @@ public class MySqlEngine extends AbstractJdbcEngine {
     protected String objectCountSql() {
         return "SELECT count(*) FROM information_schema.tables WHERE table_schema = DATABASE()";
     }
+
+    @Override
+    protected String rowCountEstimateSql() {
+        // table_rows is an estimate for InnoDB (exact for MyISAM); good enough for a row badge.
+        return "SELECT table_schema, table_name, table_rows"
+                + " FROM information_schema.tables WHERE table_schema = DATABASE()";
+    }
 }
