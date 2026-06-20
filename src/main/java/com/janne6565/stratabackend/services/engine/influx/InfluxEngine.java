@@ -3,6 +3,7 @@ package com.janne6565.stratabackend.services.engine.influx;
 import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.InfluxDBClientFactory;
 import com.influxdb.client.WriteApiBlocking;
+import com.influxdb.client.domain.Bucket;
 import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
@@ -16,11 +17,18 @@ import com.janne6565.stratabackend.model.core.SchemaInfo;
 import com.janne6565.stratabackend.model.core.TableInfo;
 import com.janne6565.stratabackend.model.exception.EngineException;
 import com.janne6565.stratabackend.services.engine.DatabaseEngine;
+import com.janne6565.stratabackend.services.engine.EngineMetrics;
 import jakarta.annotation.PreDestroy;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
@@ -115,6 +123,84 @@ public class InfluxEngine implements DatabaseEngine {
         } catch (RuntimeException ex) {
             throw new EngineException("Query failed: " + ex.getMessage());
         }
+    }
+
+    /**
+     * On-disk size and measurement count for the bucket, scraped from InfluxDB's Prometheus {@code
+     * /metrics} endpoint. {@code storage_shard_disk_size} is summed across the bucket's shards (the
+     * authoritative on-disk footprint — independent of storage class, unlike the PVC fallback);
+     * {@code storage_bucket_measurement_num} gives the measurement count. The {@code /metrics}
+     * labels key on the bucket <em>id</em>, so the bucket name is resolved to its id first. Returns
+     * empty on any failure so the caller can fall back / render "—".
+     */
+    @Override
+    public Optional<EngineMetrics> sampleMetrics(ConnectionDetails details) {
+        try {
+            Bucket bucket = client(details).getBucketsApi().findBucketByName(bucket(details));
+            if (bucket == null || bucket.getId() == null) {
+                return Optional.empty();
+            }
+            String metrics = fetchMetrics(details);
+            if (metrics == null) {
+                return Optional.empty();
+            }
+            Long dataSize = sumMetricForBucket(metrics, "storage_shard_disk_size", bucket.getId());
+            Long measurements =
+                    sumMetricForBucket(metrics, "storage_bucket_measurement_num", bucket.getId());
+            if (dataSize == null && measurements == null) {
+                return Optional.empty();
+            }
+            return Optional.of(
+                    new EngineMetrics(
+                            null, dataSize, measurements == null ? null : measurements.intValue()));
+        } catch (RuntimeException ex) {
+            return Optional.empty();
+        }
+    }
+
+    private String fetchMetrics(ConnectionDetails details) {
+        try {
+            HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();
+            HttpRequest request =
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(url(details) + "/metrics"))
+                            .timeout(Duration.ofSeconds(5))
+                            .GET()
+                            .build();
+            HttpResponse<String> response =
+                    http.send(request, HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() == 200 ? response.body() : null;
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Sums the values of a Prometheus gauge across all series carrying {@code bucket="<id>"} (e.g.
+     * one {@code storage_shard_disk_size} sample per shard). Returns null when no matching series
+     * is present.
+     */
+    static Long sumMetricForBucket(String metricsText, String metricName, String bucketId) {
+        String prefix = metricName + "{";
+        String bucketLabel = "bucket=\"" + bucketId + "\"";
+        double total = 0;
+        boolean found = false;
+        for (String line : metricsText.split("\\R")) {
+            if (!line.startsWith(prefix) || !line.contains(bucketLabel)) {
+                continue;
+            }
+            int space = line.lastIndexOf(' ');
+            if (space < 0) {
+                continue;
+            }
+            try {
+                total += Double.parseDouble(line.substring(space + 1).trim());
+                found = true;
+            } catch (NumberFormatException ignored) {
+                // Skip malformed sample lines.
+            }
+        }
+        return found ? (long) total : null;
     }
 
     private QueryResult writeLineProtocol(ConnectionDetails details, String data) {
