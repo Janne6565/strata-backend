@@ -50,7 +50,9 @@ public class CredentialResolver {
 
     private CredentialSource fromEnvVar(String field, EnvVar var) {
         if (var.getValue() != null) {
-            return CredentialSource.literal(field);
+            // Record the env var name (not the inline value) so it can be re-read live at
+            // connection time — keeps the "pointers only, never persist values" rule (AUTH.md).
+            return CredentialSource.literal(field, var.getName());
         }
         EnvVarSource source = var.getValueFrom();
         if (source != null && source.getSecretKeyRef() != null) {

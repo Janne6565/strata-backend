@@ -8,26 +8,32 @@ import com.janne6565.stratabackend.model.exception.BadRequestException;
 import com.janne6565.stratabackend.model.exception.NotFoundException;
 import com.janne6565.stratabackend.services.engine.ConnectionDetailsResolver;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
  * Resolves a datasource's connection credentials on demand by reading the backing Secret/ConfigMap
  * values from the cluster (AUTH.md: in-memory only, never persisted). Builds the cluster-DNS host
- * from the datasource's Service. Literal/unresolved fields cannot be recovered from the stored
- * pointer-only resolution and must be supplied via a manual override.
+ * from the datasource's Service. Inline (LITERAL) fields are re-read live from the workload's pod
+ * spec by env var name; only fields with no recoverable source (UNRESOLVED, or a literal whose env
+ * var is gone) must be supplied via a manual override.
  */
 @Component
 @RequiredArgsConstructor
 public class CredentialReader implements ConnectionDetailsResolver {
 
     private final KubernetesClient client;
+    private final KubernetesScanner scanner;
 
     @Override
     public ConnectionDetails resolve(DatasourceEntity datasource) {
@@ -58,26 +64,63 @@ public class CredentialReader implements ConnectionDetailsResolver {
         if (resolution == null) {
             throw new BadRequestException("DatasourceEntity has no resolved credentials");
         }
-        String namespace = datasource.getNamespace();
         Map<String, String> values = new HashMap<>();
         for (CredentialSource source : resolution.sources()) {
-            values.put(source.field(), readValue(namespace, source));
+            values.put(source.field(), readValue(datasource, source));
         }
         return values;
     }
 
-    private String readValue(String namespace, CredentialSource source) {
+    private String readValue(DatasourceEntity datasource, CredentialSource source) {
+        String namespace = datasource.getNamespace();
         return switch (source.type()) {
             case SECRET -> decode(readSecretValue(namespace, source.name(), source.key()));
             case CONFIG_MAP -> readConfigMapValue(namespace, source.name(), source.key());
-            case LITERAL, UNRESOLVED ->
-                    throw new BadRequestException(
-                            "Credential field '"
-                                    + source.field()
-                                    + "' is "
-                                    + source.type()
-                                    + " and must be supplied via a manual override");
+            case LITERAL -> readLiteralValue(datasource, source);
+            case UNRESOLVED -> throw needsManualOverride(source);
         };
+    }
+
+    /**
+     * Re-reads an inline {@code env[].value} live from the workload's primary container (the value
+     * was never persisted — only the env var name in {@code source.key()}). Falls back to requiring
+     * a manual override if the env var is gone or no longer inline (e.g. moved to a secretKeyRef).
+     */
+    private String readLiteralValue(DatasourceEntity datasource, CredentialSource source) {
+        if (source.key() == null) {
+            // Resolution recorded before literals carried the env var name.
+            throw needsManualOverride(source);
+        }
+        Container container =
+                scanner.primaryContainer(
+                                datasource.getNamespace(),
+                                datasource.getWorkloadKind(),
+                                datasource.getWorkloadName())
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Workload "
+                                                        + datasource.getNamespace()
+                                                        + "/"
+                                                        + datasource.getWorkloadKind()
+                                                        + "/"
+                                                        + datasource.getWorkloadName()));
+        List<EnvVar> env = container.getEnv() == null ? List.of() : container.getEnv();
+        return env.stream()
+                .filter(e -> source.key().equals(e.getName()))
+                .map(EnvVar::getValue)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> needsManualOverride(source));
+    }
+
+    private BadRequestException needsManualOverride(CredentialSource source) {
+        return new BadRequestException(
+                "Credential field '"
+                        + source.field()
+                        + "' is "
+                        + source.type()
+                        + " and must be supplied via a manual override");
     }
 
     private String readSecretValue(String namespace, String name, String key) {

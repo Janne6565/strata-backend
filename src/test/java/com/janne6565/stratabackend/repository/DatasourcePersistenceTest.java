@@ -43,7 +43,7 @@ class DatasourcePersistenceTest {
                         "pg",
                         List.of(
                                 CredentialSource.secret("password", "pg-secret", "password"),
-                                CredentialSource.literal("username"))));
+                                CredentialSource.literal("username", "POSTGRES_USER"))));
         ds.setManualOverrides(Map.of("displayName", "Custom Name"));
 
         repository.saveAndFlush(ds);

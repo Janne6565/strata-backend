@@ -2,7 +2,10 @@ package com.janne6565.stratabackend.model.core;
 
 /** Where a credential field's value comes from in the workload's environment. */
 public enum CredentialSourceType {
-    /** An inline {@code env[].value}. The value is the credential, so it is never persisted. */
+    /**
+     * An inline {@code env[].value}. The value is never persisted; the env var name is recorded so
+     * it can be re-read live from the workload's pod spec at connection time.
+     */
     LITERAL,
     /** A {@code secretKeyRef} or an {@code envFrom.secretRef} (name + key recorded, value live). */
     SECRET,

@@ -57,8 +57,10 @@ class CredentialResolverTest {
                 resolver.resolve(
                         container(java.util.List.of(literal, secretRef, configRef)), mapping, "pg");
 
-        assertThat(sourceFor(resolution, "username").type())
-                .isEqualTo(CredentialSourceType.LITERAL);
+        CredentialSource username = sourceFor(resolution, "username");
+        assertThat(username.type()).isEqualTo(CredentialSourceType.LITERAL);
+        // The env var name is recorded so the inline value can be re-read live at connect time.
+        assertThat(username.key()).isEqualTo("PGUSER");
 
         CredentialSource password = sourceFor(resolution, "password");
         assertThat(password.type()).isEqualTo(CredentialSourceType.SECRET);

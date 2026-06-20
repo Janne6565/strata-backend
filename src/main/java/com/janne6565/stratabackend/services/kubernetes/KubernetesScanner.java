@@ -41,8 +41,41 @@ public class KubernetesScanner {
         return descriptors;
     }
 
-    private Optional<WorkloadDescriptor> describe(
-            String kind, ObjectMeta meta, PodTemplateSpec template) {
+    /**
+     * Re-fetches a single workload's primary container — used to re-read inline (LITERAL)
+     * credential values live at connection time (see {@code CredentialReader}).
+     */
+    public Optional<Container> primaryContainer(String namespace, String kind, String name) {
+        PodTemplateSpec template =
+                switch (kind == null ? "" : kind) {
+                    case "Deployment" ->
+                            templateOf(
+                                    client.apps()
+                                            .deployments()
+                                            .inNamespace(namespace)
+                                            .withName(name)
+                                            .get());
+                    case "StatefulSet" ->
+                            templateOf(
+                                    client.apps()
+                                            .statefulSets()
+                                            .inNamespace(namespace)
+                                            .withName(name)
+                                            .get());
+                    default -> null;
+                };
+        return primaryContainer(template);
+    }
+
+    private static PodTemplateSpec templateOf(Deployment d) {
+        return d == null || d.getSpec() == null ? null : d.getSpec().getTemplate();
+    }
+
+    private static PodTemplateSpec templateOf(StatefulSet s) {
+        return s == null || s.getSpec() == null ? null : s.getSpec().getTemplate();
+    }
+
+    private Optional<Container> primaryContainer(PodTemplateSpec template) {
         if (template == null || template.getSpec() == null) {
             return Optional.empty();
         }
@@ -50,7 +83,16 @@ public class KubernetesScanner {
         if (containers == null || containers.isEmpty()) {
             return Optional.empty();
         }
-        Container primary = containers.get(0);
+        return Optional.of(containers.get(0));
+    }
+
+    private Optional<WorkloadDescriptor> describe(
+            String kind, ObjectMeta meta, PodTemplateSpec template) {
+        Optional<Container> primaryOpt = primaryContainer(template);
+        if (primaryOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        Container primary = primaryOpt.get();
 
         List<Integer> ports = new ArrayList<>(containerPorts(primary));
         Map<String, String> podLabels =
