@@ -17,10 +17,10 @@ RUN ./mvnw -B -q -DskipTests -Dspotless.check.skip=true clean package \
 # ---- runtime ----
 FROM eclipse-temurin:25-jre AS runtime
 WORKDIR /app
-# Non-root user (matches the Deployment securityContext runAsUser: 1000).
-RUN groupadd --system --gid 1000 strata \
-    && useradd --system --uid 1000 --gid 1000 strata
 COPY --from=build /app/app.jar app.jar
+# Run as a non-root numeric UID (matches the Deployment securityContext
+# runAsUser: 1000). No passwd entry is needed for the JVM. The temurin base
+# already ships GID 1000, so we don't create a user/group here.
 USER 1000
 EXPOSE 8080
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]
