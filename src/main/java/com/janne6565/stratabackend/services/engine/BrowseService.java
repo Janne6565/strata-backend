@@ -3,6 +3,7 @@ package com.janne6565.stratabackend.services.engine;
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.core.AuditOutcome;
+import com.janne6565.stratabackend.model.core.BrowseQuery;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.core.ObjectRef;
 import com.janne6565.stratabackend.model.core.QueryMode;
@@ -41,20 +42,16 @@ public class BrowseService {
     }
 
     public RowPage browse(
-            UUID datasourceId,
-            String schema,
-            String table,
-            int offset,
-            int limit,
-            UserEntity caller) {
+            UUID datasourceId, String schema, String table, BrowseQuery query, UserEntity caller) {
         DatasourceEntity datasource = require(datasourceId);
         DatabaseEngine engine = engineRegistry.forDriver(datasource.getDriver());
         ConnectionDetails details = connectionDetailsResolver.resolve(datasource);
-        int cappedLimit = Math.min(Math.max(limit, 0), MAX_BROWSE_LIMIT);
+        int cappedLimit = Math.min(Math.max(query.limit(), 0), MAX_BROWSE_LIMIT);
         String target = schema + "." + table;
         try {
             RowPage page =
-                    engine.browse(details, new ObjectRef(schema, table), offset, cappedLimit);
+                    engine.browse(
+                            details, new ObjectRef(schema, table), query.withLimit(cappedLimit));
             audit(caller, datasource, "DB_BROWSE", target, AuditOutcome.SUCCESS, null);
             return page;
         } catch (EngineException ex) {

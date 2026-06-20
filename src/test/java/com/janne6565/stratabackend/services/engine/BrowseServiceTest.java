@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.janne6565.stratabackend.entity.DatasourceEntity;
 import com.janne6565.stratabackend.entity.UserEntity;
 import com.janne6565.stratabackend.model.core.AuditOutcome;
+import com.janne6565.stratabackend.model.core.BrowseQuery;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.core.QueryMode;
 import com.janne6565.stratabackend.model.core.QueryResult;
@@ -99,7 +100,9 @@ class BrowseServiceTest {
 
     @Test
     void browseReturnsRowsAndAudits() {
-        RowPage page = service.browse(datasource.getId(), "public", "customer", 0, 10, caller);
+        RowPage page =
+                service.browse(
+                        datasource.getId(), "public", "customer", BrowseQuery.paged(0, 10), caller);
 
         assertThat(page.columns()).contains("id", "name");
         assertThat(page.rows()).isNotEmpty();

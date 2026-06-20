@@ -1,5 +1,6 @@
 package com.janne6565.stratabackend.services.engine;
 
+import com.janne6565.stratabackend.model.core.BrowseQuery;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.core.ObjectRef;
 import com.janne6565.stratabackend.model.core.QueryMode;
@@ -31,6 +32,16 @@ public interface DatabaseEngine {
 
     /** Returns a page of rows/documents from a table/view/collection. */
     RowPage browse(ConnectionDetails details, ObjectRef ref, int offset, int limit);
+
+    /**
+     * Returns a page of rows, applying ordering and column filters when the engine can express
+     * them. The default ignores the extra criteria and pages as for {@link
+     * #browse(ConnectionDetails, ObjectRef, int, int)}; relational engines override this to push
+     * sort/filter into SQL.
+     */
+    default RowPage browse(ConnectionDetails details, ObjectRef ref, BrowseQuery query) {
+        return browse(details, ref, query.offset(), query.limit());
+    }
 
     /**
      * Runs an arbitrary query/command. In {@link QueryMode#READ} writes are rejected at the engine.

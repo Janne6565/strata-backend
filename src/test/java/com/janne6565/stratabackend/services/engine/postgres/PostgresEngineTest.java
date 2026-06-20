@@ -3,20 +3,26 @@ package com.janne6565.stratabackend.services.engine.postgres;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.janne6565.stratabackend.model.core.BrowseQuery;
+import com.janne6565.stratabackend.model.core.ColumnFilter;
 import com.janne6565.stratabackend.model.core.ColumnInfo;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
+import com.janne6565.stratabackend.model.core.FilterOp;
 import com.janne6565.stratabackend.model.core.ObjectRef;
 import com.janne6565.stratabackend.model.core.QueryMode;
 import com.janne6565.stratabackend.model.core.QueryResult;
 import com.janne6565.stratabackend.model.core.RowPage;
 import com.janne6565.stratabackend.model.core.SchemaInfo;
+import com.janne6565.stratabackend.model.core.SortDirection;
 import com.janne6565.stratabackend.model.core.TableInfo;
+import com.janne6565.stratabackend.model.exception.BadRequestException;
 import com.janne6565.stratabackend.model.exception.EngineException;
 import com.janne6565.stratabackend.services.engine.jdbc.JdbcConnectionPool;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -82,6 +88,88 @@ class PostgresEngineTest {
 
         assertThat(page.columns()).contains("id", "name");
         assertThat(page.rows()).hasSize(2);
+    }
+
+    @Test
+    void browseSortsByColumnDescending() {
+        RowPage page =
+                engine.browse(
+                        details(),
+                        new ObjectRef("public", "customer"),
+                        new BrowseQuery(0, 50, "name", SortDirection.DESC, List.of()));
+
+        // 'Linus' is the lexicographic max across the seed (and any writes from sibling tests).
+        assertThat(page.rows().get(0).get(1)).isEqualTo("Linus");
+    }
+
+    @Test
+    void browseFiltersByEquality() {
+        RowPage page =
+                engine.browse(
+                        details(),
+                        new ObjectRef("public", "customer"),
+                        new BrowseQuery(
+                                0,
+                                50,
+                                null,
+                                SortDirection.ASC,
+                                List.of(new ColumnFilter("name", FilterOp.EQ, "Ada"))));
+
+        assertThat(page.rows()).hasSize(1);
+        assertThat(page.rows().get(0).get(1)).isEqualTo("Ada");
+    }
+
+    @Test
+    void browseFiltersByNumericComparison() {
+        // String value bound against an integer column — exercises typed parameter binding.
+        RowPage page =
+                engine.browse(
+                        details(),
+                        new ObjectRef("public", "customer"),
+                        new BrowseQuery(
+                                0,
+                                50,
+                                "id",
+                                SortDirection.ASC,
+                                List.of(new ColumnFilter("id", FilterOp.GTE, "2"))));
+
+        assertThat(page.rows()).isNotEmpty();
+        assertThat(page.rows())
+                .allSatisfy(row -> assertThat((Integer) row.get(0)).isGreaterThanOrEqualTo(2));
+    }
+
+    @Test
+    void browseRejectsUnknownSortColumn() {
+        assertThatThrownBy(
+                        () ->
+                                engine.browse(
+                                        details(),
+                                        new ObjectRef("public", "customer"),
+                                        new BrowseQuery(
+                                                0,
+                                                50,
+                                                "name; DROP TABLE customer",
+                                                SortDirection.ASC,
+                                                List.of())))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void browseRejectsUnknownFilterColumn() {
+        assertThatThrownBy(
+                        () ->
+                                engine.browse(
+                                        details(),
+                                        new ObjectRef("public", "customer"),
+                                        new BrowseQuery(
+                                                0,
+                                                50,
+                                                null,
+                                                SortDirection.ASC,
+                                                List.of(
+                                                        new ColumnFilter(
+                                                                "bogus", FilterOp.EQ, "x")))))
+                .isInstanceOf(BadRequestException.class);
     }
 
     @Test

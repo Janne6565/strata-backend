@@ -1,5 +1,7 @@
 package com.janne6565.stratabackend.services.engine.jdbc;
 
+import com.janne6565.stratabackend.model.core.BrowseQuery;
+import com.janne6565.stratabackend.model.core.ColumnFilter;
 import com.janne6565.stratabackend.model.core.ColumnInfo;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.core.ObjectRef;
@@ -8,6 +10,7 @@ import com.janne6565.stratabackend.model.core.QueryResult;
 import com.janne6565.stratabackend.model.core.RowPage;
 import com.janne6565.stratabackend.model.core.SchemaInfo;
 import com.janne6565.stratabackend.model.core.TableInfo;
+import com.janne6565.stratabackend.model.exception.BadRequestException;
 import com.janne6565.stratabackend.model.exception.EngineException;
 import com.janne6565.stratabackend.services.engine.DatabaseEngine;
 import com.janne6565.stratabackend.services.engine.EngineMetrics;
@@ -19,7 +22,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -130,8 +135,13 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
 
     @Override
     public RowPage browse(ConnectionDetails details, ObjectRef ref, int offset, int limit) {
+        return browse(details, ref, BrowseQuery.paged(offset, limit));
+    }
+
+    @Override
+    public RowPage browse(ConnectionDetails details, ObjectRef ref, BrowseQuery query) {
         try (Connection connection = connection(details)) {
-            return doBrowse(connection, ref, offset, limit);
+            return doBrowse(connection, ref, query);
         } catch (SQLException ex) {
             throw new EngineException("Browse failed: " + ex.getMessage());
         }
@@ -215,17 +225,77 @@ public abstract class AbstractJdbcEngine implements DatabaseEngine {
                 : meta.getPrimaryKeys(null, schema, table);
     }
 
-    private RowPage doBrowse(Connection connection, ObjectRef ref, int offset, int limit)
+    private RowPage doBrowse(Connection connection, ObjectRef ref, BrowseQuery query)
             throws SQLException {
-        String sql = "SELECT * FROM " + qualified(ref) + " LIMIT ? OFFSET ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, Math.max(0, limit));
-            ps.setInt(2, Math.max(0, offset));
-            try (ResultSet rs = ps.executeQuery()) {
-                List<String> columns = columnNames(rs);
-                return new RowPage(columns, readRows(rs, columns.size(), limit), offset, limit);
+        // Identifiers (table, filter/sort columns) are validated against the table's real columns
+        // and dialect-quoted; only fixed operators and quoted identifiers reach the SQL string.
+        // Filter values are bound as typed JDBC parameters. The paging window is always bound.
+        Map<String, Integer> columnTypes = columnTypes(connection, ref);
+        StringBuilder sql = new StringBuilder("SELECT * FROM ").append(qualified(ref));
+        List<String> bindValues = new ArrayList<>();
+        List<Integer> bindTypes = new ArrayList<>();
+
+        List<ColumnFilter> filters = query.filters();
+        for (int i = 0; i < filters.size(); i++) {
+            ColumnFilter filter = filters.get(i);
+            Integer sqlType = columnTypes.get(filter.column());
+            if (sqlType == null) {
+                throw new BadRequestException("Unknown filter column: " + filter.column());
+            }
+            sql.append(i == 0 ? " WHERE " : " AND ")
+                    .append(quote(filter.column()))
+                    .append(' ')
+                    .append(filter.op().sql());
+            if (filter.op().needsValue()) {
+                sql.append(" ?");
+                bindValues.add(filter.value());
+                bindTypes.add(sqlType);
             }
         }
+
+        if (query.hasOrder()) {
+            if (!columnTypes.containsKey(query.orderBy())) {
+                throw new BadRequestException("Unknown sort column: " + query.orderBy());
+            }
+            sql.append(" ORDER BY ")
+                    .append(quote(query.orderBy()))
+                    .append(' ')
+                    .append(query.direction().name());
+        }
+
+        sql.append(" LIMIT ? OFFSET ?");
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            int index = 1;
+            for (int i = 0; i < bindValues.size(); i++) {
+                ps.setObject(index++, bindValues.get(i), bindTypes.get(i));
+            }
+            ps.setInt(index++, Math.max(0, query.limit()));
+            ps.setInt(index, Math.max(0, query.offset()));
+            try (ResultSet rs = ps.executeQuery()) {
+                List<String> columns = columnNames(rs);
+                return new RowPage(
+                        columns,
+                        readRows(rs, columns.size(), query.limit()),
+                        query.offset(),
+                        query.limit());
+            }
+        }
+    }
+
+    /**
+     * Maps the table's column names to their {@link java.sql.Types} code, for validation/binding.
+     */
+    private Map<String, Integer> columnTypes(Connection connection, ObjectRef ref)
+            throws SQLException {
+        Map<String, Integer> types = new LinkedHashMap<>();
+        DatabaseMetaData meta = connection.getMetaData();
+        try (ResultSet rs = getColumns(meta, ref.schema(), ref.name())) {
+            while (rs.next()) {
+                types.put(rs.getString("COLUMN_NAME"), rs.getInt("DATA_TYPE"));
+            }
+        }
+        return types;
     }
 
     /**
