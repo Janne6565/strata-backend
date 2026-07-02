@@ -34,7 +34,8 @@ class ValidatorRegistryTest {
                         new GrantPolicies(),
                         new GroupPolicies(),
                         new DiscoveryPolicies(),
-                        new DatabaseAccessPolicies(null));
+                        new DatabaseAccessPolicies(null),
+                        new BackupPolicies());
 
         registry.afterSingletonsInstantiated(); // must not throw — all operations covered
     }
@@ -56,7 +57,8 @@ class ValidatorRegistryTest {
                         new GrantPolicies(),
                         new GroupPolicies(),
                         new DiscoveryPolicies(),
-                        new DatabaseAccessPolicies(null));
+                        new DatabaseAccessPolicies(null),
+                        new BackupPolicies());
         registry.afterSingletonsInstantiated();
 
         UserEntity admin = new UserEntity("admin", "hash", Role.ADMIN);
