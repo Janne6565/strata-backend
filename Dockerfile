@@ -17,6 +17,15 @@ RUN ./mvnw -B -q -DskipTests -Dspotless.check.skip=true clean package \
 # ---- runtime ----
 FROM eclipse-temurin:25-jre AS runtime
 WORKDIR /app
+# pg_dump for the scheduled backup job (BackupService). Installed from the PGDG repo because
+# stock Ubuntu ships postgresql-client 16, and pg_dump refuses servers newer than itself —
+# keep this major version >= the Postgres StatefulSet image (currently postgres:17).
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+    && install -d /usr/share/postgresql-common/pgdg \
+    && curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] http://apt.postgresql.org/pub/repos/apt noble-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update && apt-get install -y --no-install-recommends postgresql-client-17 \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/app.jar app.jar
 # Run as a non-root numeric UID (matches the Deployment securityContext
 # runAsUser: 1000). No passwd entry is needed for the JVM. The temurin base

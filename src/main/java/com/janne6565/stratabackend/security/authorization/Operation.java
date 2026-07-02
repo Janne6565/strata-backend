@@ -25,5 +25,7 @@ public enum Operation {
     DB_VIEW,
     DB_BROWSE,
     DB_QUERY_READ,
-    DB_QUERY_WRITE
+    DB_QUERY_WRITE,
+    BACKUP_LIST,
+    BACKUP_DOWNLOAD
 }

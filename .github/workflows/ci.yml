@@ -21,6 +21,15 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
+      # The backup integration test shells out to pg_dump and needs a major
+      # version >= the Postgres server (17). Ubuntu runners ship client 16, so
+      # pull postgresql-client-17 from the PGDG repo (matches the Dockerfile).
+      - name: Install postgresql-client-17
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update && sudo apt-get install -y postgresql-client-17
       # Runs unit + repository/integration tests (Testcontainers; Docker is
       # available on the runner) and the Spotless formatting gate.
       - name: mvn verify

@@ -36,6 +36,15 @@ strata:
   discovery:
     # Image -> driver detectors (see ARCHITECTURE.md §8). Populated per environment.
     detectors: []
+  backup:
+    # Scheduled pg_dump of the state database. Off locally; enabled in k8s via ConfigMap.
+    enabled: ${STRATA_BACKUP_ENABLED:false}
+    directory: ${STRATA_BACKUP_DIR:./backups}
+    cron: ${STRATA_BACKUP_CRON:0 0 */2 * * *}
+    # Tier boundaries: the oldest backup in each age bucket is kept, older than the last is pruned.
+    retention-tiers: [2h, 1d, 3d, 7d, 14d]
+    pg-dump-path: ${STRATA_PG_DUMP_PATH:pg_dump}
+    timeout: 5m
 
 springdoc:
   api-docs:
