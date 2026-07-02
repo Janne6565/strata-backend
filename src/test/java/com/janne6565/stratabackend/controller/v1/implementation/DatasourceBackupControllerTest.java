@@ -2,6 +2,7 @@ package com.janne6565.stratabackend.controller.v1.implementation;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -55,6 +56,19 @@ class DatasourceBackupControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value(BACKUP_NAME))
                 .andExpect(jsonPath("$[0].sizeBytes").value(4096));
+    }
+
+    @Test
+    void createTriggersABackupAndReturnsItsMetadata() throws Exception {
+        when(datasourceBackupService.backupNow(DS_ID))
+                .thenReturn(
+                        new BackupResponse(
+                                BACKUP_NAME, 4096, Instant.parse("2026-07-03T14:00:00Z")));
+
+        mockMvc.perform(post("/v1/datasources/{id}/backups", DS_ID))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value(BACKUP_NAME))
+                .andExpect(jsonPath("$.sizeBytes").value(4096));
     }
 
     @Test

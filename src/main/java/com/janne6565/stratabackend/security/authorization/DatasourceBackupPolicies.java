@@ -30,6 +30,13 @@ public class DatasourceBackupPolicies {
         return canRead(resolver, referenceId, caller);
     }
 
+    @Validates(Operation.DATASOURCE_BACKUP_CREATE)
+    public boolean canCreateBackup(
+            ResourceResolver resolver, Object referenceId, UserEntity caller) {
+        // A manual backup is a full read of the database — the same bar as listing/downloading.
+        return canRead(resolver, referenceId, caller);
+    }
+
     private boolean canRead(ResourceResolver resolver, Object referenceId, UserEntity caller) {
         DatasourceEntity datasource = resolver.requireDatasource(referenceId);
         return grantEvaluator.canRead(caller, datasource);

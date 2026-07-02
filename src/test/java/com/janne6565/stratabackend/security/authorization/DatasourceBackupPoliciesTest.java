@@ -31,6 +31,7 @@ class DatasourceBackupPoliciesTest {
 
         assertThat(policies.canListBackups(resolver, datasourceId, caller)).isTrue();
         assertThat(policies.canDownloadBackup(resolver, datasourceId, caller)).isTrue();
+        assertThat(policies.canCreateBackup(resolver, datasourceId, caller)).isTrue();
     }
 
     @Test
@@ -41,5 +42,6 @@ class DatasourceBackupPoliciesTest {
 
         assertThat(policies.canListBackups(resolver, datasourceId, caller)).isFalse();
         assertThat(policies.canDownloadBackup(resolver, datasourceId, caller)).isFalse();
+        assertThat(policies.canCreateBackup(resolver, datasourceId, caller)).isFalse();
     }
 }

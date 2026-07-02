@@ -2,6 +2,7 @@ package com.janne6565.stratabackend.services.backup;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -13,8 +14,10 @@ import static org.mockito.Mockito.when;
 
 import com.janne6565.stratabackend.configuration.backup.BackupProperties;
 import com.janne6565.stratabackend.entity.DatasourceEntity;
+import com.janne6565.stratabackend.model.core.BackupResponse;
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.exception.BadRequestException;
+import com.janne6565.stratabackend.model.exception.NotFoundException;
 import com.janne6565.stratabackend.repository.DatasourceRepository;
 import com.janne6565.stratabackend.services.engine.ConnectionDetailsResolver;
 import java.nio.file.Files;
@@ -24,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -127,6 +131,48 @@ class DatasourceBackupServiceTest {
         service.backupAll();
 
         verify(pgDumpRunner).dumpTo(any(Path.class), eq(details));
+    }
+
+    @Test
+    void backupNowWritesAndReturnsTheNewBackupMetadata() {
+        DatasourceEntity postgres = datasource("postgresql");
+        when(datasourceRepository.findById(postgres.getId())).thenReturn(Optional.of(postgres));
+        when(connectionResolver.resolve(postgres)).thenReturn(details());
+
+        BackupResponse created = service.backupNow(postgres.getId());
+
+        assertThat(created.name()).endsWith(".dump");
+        assertThat(directoryFor(postgres).resolve(created.name())).exists();
+    }
+
+    @Test
+    void backupNow404sForAnUnknownDatasource() {
+        UUID unknown = UUID.randomUUID();
+        when(datasourceRepository.findById(unknown)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.backupNow(unknown)).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void backupNowRejectsNonPostgresDatasources() {
+        DatasourceEntity mysql = datasource("mysql");
+        when(datasourceRepository.findById(mysql.getId())).thenReturn(Optional.of(mysql));
+
+        assertThatThrownBy(() -> service.backupNow(mysql.getId()))
+                .isInstanceOf(BadRequestException.class);
+        verify(connectionResolver, never()).resolve(mysql);
+    }
+
+    @Test
+    void backupNowSurfacesUnresolvableCredentials() {
+        DatasourceEntity postgres = datasource("postgresql");
+        when(datasourceRepository.findById(postgres.getId())).thenReturn(Optional.of(postgres));
+        doThrow(new BadRequestException("no backing service"))
+                .when(connectionResolver)
+                .resolve(postgres);
+
+        assertThatThrownBy(() -> service.backupNow(postgres.getId()))
+                .isInstanceOf(BadRequestException.class);
     }
 
     private Path directoryFor(DatasourceEntity ds) {

@@ -6,11 +6,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * Per-datasource backup contract (API-first). Listing and downloading a datasource's backups
@@ -24,6 +27,11 @@ public interface DatasourceBackupApi {
     @Operation(summary = "List available backups for a datasource")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     List<BackupResponse> list(@PathVariable UUID id);
+
+    @Operation(summary = "Trigger a backup of a datasource now")
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    BackupResponse create(@PathVariable UUID id);
 
     @Operation(summary = "Download a datasource backup by file name")
     @GetMapping(path = "/{name}/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)

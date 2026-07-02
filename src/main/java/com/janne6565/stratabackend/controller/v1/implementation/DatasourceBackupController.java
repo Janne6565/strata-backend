@@ -37,6 +37,12 @@ public class DatasourceBackupController implements DatasourceBackupApi {
     }
 
     @Override
+    @NeedsValidation(Operation.DATASOURCE_BACKUP_CREATE)
+    public BackupResponse create(@ResourceId UUID id) {
+        return datasourceBackupService.backupNow(id);
+    }
+
+    @Override
     @NeedsValidation(Operation.DATASOURCE_BACKUP_DOWNLOAD)
     public ResponseEntity<Resource> download(@ResourceId UUID id, String name) {
         Path file = datasourceBackupService.requireBackupFile(id, name);
