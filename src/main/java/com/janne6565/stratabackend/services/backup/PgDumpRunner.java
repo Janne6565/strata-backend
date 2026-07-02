@@ -1,11 +1,14 @@
 package com.janne6565.stratabackend.services.backup;
 
 import com.janne6565.stratabackend.configuration.backup.BackupProperties;
+import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -13,11 +16,11 @@ import org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails;
 import org.springframework.stereotype.Component;
 
 /**
- * Invokes the {@code pg_dump} binary against the application database. The dump uses the custom
- * format ({@code -Fc}: compressed, restorable with {@code pg_restore}). Credentials travel only
- * through the child process environment ({@code PGUSER}/{@code PGPASSWORD}) — never on the command
- * line, where they would be visible in the process list. Connection details come from {@link
- * JdbcConnectionDetails} so Testcontainers-backed tests target the right database.
+ * Invokes the {@code pg_dump} binary. The dump uses the custom format ({@code -Fc}: compressed,
+ * restorable with {@code pg_restore}). Credentials travel only through the child process
+ * environment ({@code PG*} vars) — never on the command line, where they would be visible in the
+ * process list. Can target Strata's own database ({@link JdbcConnectionDetails}) or any datasource
+ * ({@link ConnectionDetails}).
  */
 @Component
 @RequiredArgsConstructor
@@ -26,10 +29,34 @@ public class PgDumpRunner {
     private final BackupProperties properties;
     private final JdbcConnectionDetails connectionDetails;
 
-    /** Runs pg_dump writing to {@code target}; throws {@link BackupException} on any failure. */
+    /** Dumps Strata's own state database to {@code target}. */
     public void dumpTo(Path target) {
         // jdbc:postgresql://host:port/db minus the "jdbc:" prefix is a valid libpq URI.
         String libpqUri = connectionDetails.getJdbcUrl().replaceFirst("^jdbc:", "");
+        Map<String, String> env = new LinkedHashMap<>();
+        env.put("PGUSER", connectionDetails.getUsername());
+        env.put("PGPASSWORD", connectionDetails.getPassword());
+        dump(target, libpqUri, env);
+    }
+
+    /** Dumps an arbitrary datasource (e.g. a discovered PostgreSQL database) to {@code target}. */
+    public void dumpTo(Path target, ConnectionDetails details) {
+        String libpqUri =
+                "postgresql://" + details.host() + ":" + details.port() + "/" + details.database();
+        Map<String, String> env = new LinkedHashMap<>();
+        env.put("PGHOST", details.host());
+        env.put("PGPORT", String.valueOf(details.port()));
+        env.put("PGDATABASE", details.database());
+        if (details.username() != null) {
+            env.put("PGUSER", details.username());
+        }
+        if (details.password() != null) {
+            env.put("PGPASSWORD", details.password());
+        }
+        dump(target, libpqUri, env);
+    }
+
+    private void dump(Path target, String libpqUri, Map<String, String> pgEnv) {
         ProcessBuilder processBuilder =
                 new ProcessBuilder(
                         List.of(
@@ -37,8 +64,7 @@ public class PgDumpRunner {
                                 "--format=custom",
                                 "--file=" + target.toAbsolutePath(),
                                 libpqUri));
-        processBuilder.environment().put("PGUSER", connectionDetails.getUsername());
-        processBuilder.environment().put("PGPASSWORD", connectionDetails.getPassword());
+        processBuilder.environment().putAll(pgEnv);
         processBuilder.redirectErrorStream(true);
 
         try {

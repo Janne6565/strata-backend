@@ -9,10 +9,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Fires the periodic backup run. Kept separate from {@link BackupService} so backups stay
- * triggerable (e.g. by a future admin endpoint) even when scheduling is disabled. Export and prune
- * are isolated from each other: a failed dump must not stop pruning and vice versa, and no
- * exception may escape the scheduled method.
+ * Fires the periodic backup run. Kept separate from the services so backups stay triggerable (e.g.
+ * by a future admin endpoint) even when scheduling is disabled. Each stage is isolated: a failed
+ * app-DB dump must not stop pruning or the datasource backups, and no exception may escape the
+ * scheduled method.
  */
 @Slf4j
 @Component
@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 public class BackupScheduler {
 
     private final BackupService backupService;
+    private final DatasourceBackupService datasourceBackupService;
 
     @Scheduled(cron = "${strata.backup.cron}")
     public void run() {
@@ -34,6 +35,11 @@ public class BackupScheduler {
             backupService.prune();
         } catch (Exception e) {
             log.error("Backup prune failed", e);
+        }
+        try {
+            datasourceBackupService.backupAll();
+        } catch (Exception e) {
+            log.error("Datasource backups failed", e);
         }
     }
 }
