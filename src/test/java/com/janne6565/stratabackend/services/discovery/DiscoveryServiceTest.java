@@ -50,7 +50,8 @@ class DiscoveryServiceTest {
                                         "postgresql",
                                         new Match("postgres", List.of(5432)),
                                         new Credentials(
-                                                "pg", Map.of("password", "PGPASSWORD"), null))));
+                                                "pg", Map.of("password", "PGPASSWORD"), null))),
+                        null);
         service =
                 new DiscoveryService(
                         scanner,

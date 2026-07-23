@@ -57,6 +57,11 @@ strata:
   discovery:
     # Image -> driver detectors (see ARCHITECTURE.md §8). Populated per environment.
     detectors: []
+    # Periodic cluster re-scan on top of the manual /rescan endpoint. Cron is a 6-field
+    # Spring expression; default is hourly on the hour.
+    auto-scan:
+      enabled: ${STRATA_DISCOVERY_AUTO_SCAN_ENABLED:true}
+      cron: ${STRATA_DISCOVERY_AUTO_SCAN_CRON:0 0 * * * *}
   backup:
     # Scheduled pg_dump of the state database. Off locally; enabled in k8s via ConfigMap.
     enabled: ${STRATA_BACKUP_ENABLED:false}

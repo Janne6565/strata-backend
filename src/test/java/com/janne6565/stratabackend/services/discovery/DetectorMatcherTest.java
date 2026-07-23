@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class DetectorMatcherTest {
 
     private DetectorMatcher matcherWith(Detector... detectors) {
-        return new DetectorMatcher(new DiscoveryProperties(List.of(detectors)));
+        return new DetectorMatcher(new DiscoveryProperties(List.of(detectors), null));
     }
 
     private Detector detector(String id, String driver, String ref, List<Integer> ports) {
