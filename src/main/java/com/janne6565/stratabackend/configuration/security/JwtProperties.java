@@ -10,4 +10,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties("strata.jwt")
 public record JwtProperties(
-        @NotBlank String secret, @NotNull Duration accessTokenTtl, @NotBlank String issuer) {}
+        @NotBlank String secret,
+        @NotNull Duration accessTokenTtl,
+        @NotNull Duration refreshTokenTtl,
+        @NotBlank String issuer) {}

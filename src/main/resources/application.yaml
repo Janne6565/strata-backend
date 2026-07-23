@@ -23,11 +23,32 @@ strata:
     bootstrap:
       username: ${STRATA_OWNER_USERNAME:owner}
       password: ${STRATA_OWNER_PASSWORD:change-me-now}
+    # Secure flag on the refresh cookie. True everywhere real; set false only for plain-HTTP local dev.
+    cookie-secure: ${STRATA_COOKIE_SECURE:true}
   jwt:
     # DEV ONLY — must be overridden via STRATA_JWT_SECRET in every real environment.
     secret: ${STRATA_JWT_SECRET:dev-only-insecure-secret-change-me-0123456789}
     access-token-ttl: PT1H
+    refresh-token-ttl: P30D
     issuer: strata
+  frontend:
+    # Where OAuth callbacks redirect the browser after login (success -> /, failure -> /login?oauthError=...).
+    url: ${STRATA_FRONTEND_URL:http://localhost:5173}
+  oauth:
+    # Federated OIDC login (Authentik). client-id/secret injected via env in real deployments.
+    providers:
+      authentik:
+        client-id: ${STRATA_OAUTH_CLIENT_ID:}
+        client-secret: ${STRATA_OAUTH_CLIENT_SECRET:}
+        authorization-uri: https://sso.jannekeipert.de/application/o/authorize/
+        token-uri: https://sso.jannekeipert.de/application/o/token/
+        user-info-uri: https://sso.jannekeipert.de/application/o/userinfo/
+        scope: "openid email profile"
+        callback-uri: ${STRATA_OAUTH_CALLBACK_URI:http://localhost:8080/api/v1/auth/oauth/authentik/callback}
+    # Authentik groups that gate access and map to the coarse role.
+    groups:
+      admin: strata-admins
+      user: strata-users
   kubernetes:
     namespace-scope: ALL
     prod-namespace-patterns:

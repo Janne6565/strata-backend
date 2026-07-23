@@ -26,7 +26,8 @@ public class UserEntity {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(name = "password_hash", nullable = false)
+    // Nullable: OAuth-only accounts (federated login) never set a password.
+    @Column(name = "password_hash")
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)

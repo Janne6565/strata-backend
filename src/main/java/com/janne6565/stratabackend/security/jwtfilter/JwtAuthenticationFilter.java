@@ -48,7 +48,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void authenticate(String token, HttpServletRequest request) {
         UUID userId;
         try {
-            userId = jwtService.parseUserId(token);
+            // Only access tokens authenticate a request; a refresh token here stays anonymous.
+            userId = jwtService.parseUserId(token, JwtService.TokenType.ACCESS);
         } catch (RuntimeException ex) {
             // Invalid/expired token — stay anonymous; protected routes 401 via the entry point.
             return;
