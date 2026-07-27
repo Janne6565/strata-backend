@@ -175,6 +175,81 @@ class DatasourceBackupServiceTest {
                 .isInstanceOf(BadRequestException.class);
     }
 
+    @Test
+    void pruneSweepPrunesDatasourcesThatWereNotDumpedThisRun() throws Exception {
+        // The datasource still exists but never dumps (credentials unresolvable, workload MISSING),
+        // so backupDatasource's prune-after-write never runs for it. The sweep must still age it.
+        DatasourceEntity stalled = datasource("postgresql");
+        when(datasourceRepository.findAll()).thenReturn(List.of(stalled));
+        Path dir = directoryFor(stalled);
+        Path expired = writeDump(dir, Duration.ofDays(20));
+        Path recent = writeDump(dir, Duration.ofMinutes(30));
+
+        service.pruneAll();
+
+        assertThat(expired).doesNotExist();
+        assertThat(recent).exists();
+    }
+
+    @Test
+    void pruneSweepKeepsTheNewestBackupOfAKnownDatasource() throws Exception {
+        // Safety net: a live datasource must never be left without a restore point, however stale.
+        DatasourceEntity known = datasource("postgresql");
+        when(datasourceRepository.findAll()).thenReturn(List.of(known));
+        Path dir = directoryFor(known);
+        Path soleAncient = writeDump(dir, Duration.ofDays(90));
+
+        service.pruneAll();
+
+        assertThat(soleAncient).exists();
+        assertThat(dir).exists();
+    }
+
+    @Test
+    void pruneSweepDrainsAnOrphanedDirectoryAndRemovesIt() throws Exception {
+        // No datasource row for this id: the catalog never deletes rows on its own, so it was
+        // deleted deliberately. Its last dump is past the final tier, so the directory drains.
+        when(datasourceRepository.findAll()).thenReturn(List.of());
+        Path orphan = backupRoot.resolve("datasources").resolve(UUID.randomUUID().toString());
+        Path ancient = writeDump(orphan, Duration.ofDays(90));
+
+        service.pruneAll();
+
+        assertThat(ancient).doesNotExist();
+        assertThat(orphan).doesNotExist();
+    }
+
+    @Test
+    void pruneSweepKeepsAnOrphanedDirectoryWhileItsHistoryIsStillInTier() throws Exception {
+        // Ageing out, not a cliff edge: in-tier dumps survive and the directory stays until
+        // drained.
+        when(datasourceRepository.findAll()).thenReturn(List.of());
+        Path orphan = backupRoot.resolve("datasources").resolve(UUID.randomUUID().toString());
+        Path inTier = writeDump(orphan, Duration.ofDays(3));
+        Path expired = writeDump(orphan, Duration.ofDays(30));
+
+        service.pruneAll();
+
+        assertThat(inTier).exists();
+        assertThat(expired).doesNotExist();
+        assertThat(orphan).exists();
+    }
+
+    @Test
+    void pruneSweepIsANoOpWhenNothingHasEverBeenBackedUp() {
+        when(datasourceRepository.findAll()).thenReturn(List.of());
+
+        assertThatCode(() -> service.pruneAll()).doesNotThrowAnyException();
+    }
+
+    /** Writes a placeholder dump whose file name encodes the given age relative to {@link #NOW}. */
+    private static Path writeDump(Path directory, Duration age) throws Exception {
+        Files.createDirectories(directory);
+        Path file = directory.resolve(BackupFileNames.fileName(NOW.minus(age)));
+        Files.writeString(file, "PGDMP");
+        return file;
+    }
+
     private Path directoryFor(DatasourceEntity ds) {
         return backupRoot.resolve("datasources").resolve(ds.getId().toString());
     }

@@ -62,9 +62,18 @@ public class BackupStore {
 
     /** Applies the retention policy and removes stale tmp files; returns the deletion count. */
     public int prune(Path directory) throws IOException {
+        return prune(directory, true);
+    }
+
+    /**
+     * Applies the retention policy and removes stale tmp files; returns the deletion count. With
+     * {@code keepNewest = false} the newest-backup safety net is dropped, so the directory can
+     * drain to empty — used for orphaned datasource directories.
+     */
+    public int prune(Path directory, boolean keepNewest) throws IOException {
         Instant now = clock.instant();
         List<StoredBackup> backups = list(directory);
-        List<StoredBackup> deletions = retentionPolicy.selectDeletions(backups, now);
+        List<StoredBackup> deletions = retentionPolicy.selectDeletions(backups, now, keepNewest);
         for (StoredBackup deletion : deletions) {
             Files.deleteIfExists(deletion.path());
         }
@@ -76,6 +85,26 @@ public class BackupStore {
                 deletions.size(),
                 staleTmpFiles);
         return deletions.size() + staleTmpFiles;
+    }
+
+    /**
+     * Deletes {@code directory} if it holds no files at all. Called after pruning an orphaned
+     * datasource directory so a drained directory does not linger forever. A directory that still
+     * holds anything — a surviving dump, a fresh tmp file, an unrecognised file someone dropped
+     * there — is left alone, so this can never delete data.
+     */
+    public boolean deleteIfEmpty(Path directory) throws IOException {
+        if (!Files.isDirectory(directory)) {
+            return false;
+        }
+        try (Stream<Path> entries = Files.list(directory)) {
+            if (entries.findAny().isPresent()) {
+                return false;
+            }
+        }
+        Files.delete(directory);
+        log.info("Removed drained backup directory {}", directory);
+        return true;
     }
 
     /** Backup metadata (name, size, timestamp) for the API, newest first. */

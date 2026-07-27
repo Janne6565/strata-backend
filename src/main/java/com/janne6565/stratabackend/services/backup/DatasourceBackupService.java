@@ -9,9 +9,13 @@ import com.janne6565.stratabackend.model.exception.NotFoundException;
 import com.janne6565.stratabackend.repository.DatasourceRepository;
 import com.janne6565.stratabackend.services.engine.ConnectionDetailsResolver;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -106,6 +110,64 @@ public class DatasourceBackupService {
             log.warn("Prune after backup failed for datasource {}", ds.getId(), e);
         }
         return written;
+    }
+
+    /**
+     * Prunes every datasource backup directory on disk, not just the ones dumped this run.
+     *
+     * <p>{@link #backupDatasource} only prunes after a successful dump, so a datasource that stops
+     * being backed up — credentials no longer resolvable, workload gone MISSING, engine no longer
+     * PostgreSQL — would keep its existing dumps forever. This sweep is driven by the directory
+     * listing instead, so those directories keep ageing out under the retention tiers.
+     *
+     * <p>A directory whose id is no longer in the catalog is orphaned: {@code DiscoveryService}
+     * never deletes rows (unmatched workloads are marked MISSING), so the row can only be gone
+     * because someone deleted the datasource deliberately. Those prune without the newest-backup
+     * safety net and the directory is removed once it has drained. Never throws; failures are
+     * logged per directory so one bad directory cannot stop the rest.
+     */
+    public void pruneAll() {
+        Path root = Path.of(properties.directory(), DATASOURCES_SUBDIR);
+        if (!Files.isDirectory(root)) {
+            return;
+        }
+        Set<String> known =
+                datasourceRepository.findAll().stream()
+                        .map(ds -> ds.getId().toString())
+                        .collect(Collectors.toSet());
+
+        List<Path> directories;
+        try (Stream<Path> entries = Files.list(root)) {
+            directories = entries.filter(Files::isDirectory).toList();
+        } catch (IOException e) {
+            log.error("Could not list datasource backup directories in {}", root, e);
+            return;
+        }
+
+        int swept = 0;
+        int orphaned = 0;
+        int removed = 0;
+        for (Path dir : directories) {
+            boolean isKnown = known.contains(dir.getFileName().toString());
+            try {
+                store.prune(dir, isKnown);
+                if (!isKnown) {
+                    orphaned++;
+                    if (store.deleteIfEmpty(dir)) {
+                        removed++;
+                    }
+                }
+                swept++;
+            } catch (IOException e) {
+                log.warn("Prune sweep failed for backup directory {}", dir, e);
+            }
+        }
+        log.info(
+                "Datasource backup prune sweep complete: {} directories swept ({} orphaned, {}"
+                        + " removed after draining)",
+                swept,
+                orphaned,
+                removed);
     }
 
     /** Backup metadata for one datasource, newest first. */

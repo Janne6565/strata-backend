@@ -68,6 +68,31 @@ class BackupRetentionPolicyTest {
     }
 
     @Test
+    void withoutTheNewestSafetyNetAnOldSoleBackupIsDeleted() {
+        // An orphaned directory whose only remaining dump is past the last tier: with the safety
+        // net it would be kept forever, without it the directory can finally drain.
+        StoredBackup soleAncient = backupAged(Duration.ofDays(90));
+
+        assertThat(policy.selectDeletions(List.of(soleAncient), NOW)).isEmpty();
+        assertThat(policy.selectDeletions(List.of(soleAncient), NOW, false))
+                .containsExactly(soleAncient);
+    }
+
+    @Test
+    void withoutTheNewestSafetyNetInTierBackupsStillSurvive() {
+        // Dropping the net must not turn prune into "delete everything" — a still-orphaned
+        // directory keeps its in-tier history and only drains as that history ages out.
+        StoredBackup recent = backupAged(Duration.ofMinutes(10));
+        StoredBackup week = backupAged(Duration.ofDays(6));
+        StoredBackup expired = backupAged(Duration.ofDays(20));
+
+        List<StoredBackup> deletions =
+                policy.selectDeletions(List.of(recent, week, expired), NOW, false);
+
+        assertThat(deletions).containsExactly(expired);
+    }
+
+    @Test
     void boundaryExactAgeBelongsToTheLowerBucket() {
         // Buckets are (lower, upper]: an exactly-2h-old backup is still in the first bucket.
         StoredBackup atBoundary = backupAged(Duration.ofHours(2));

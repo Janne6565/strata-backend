@@ -41,5 +41,12 @@ public class BackupScheduler {
         } catch (Exception e) {
             log.error("Datasource backups failed", e);
         }
+        // Last: sweeps every directory on disk, including datasources that were skipped above and
+        // orphaned directories whose datasource is gone. Runs even when the dumps failed.
+        try {
+            datasourceBackupService.pruneAll();
+        } catch (Exception e) {
+            log.error("Datasource backup prune sweep failed", e);
+        }
     }
 }

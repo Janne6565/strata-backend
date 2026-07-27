@@ -68,7 +68,7 @@ strata:
     directory: ${STRATA_BACKUP_DIR:./backups}
     cron: ${STRATA_BACKUP_CRON:0 0 */2 * * *}
     # Tier boundaries: the oldest backup in each age bucket is kept, older than the last is pruned.
-    retention-tiers: [2h, 1d, 3d, 7d, 14d]
+    retention-tiers: [2h, 1d, 3d, 7d, 14d, 30d, 60d]
     pg-dump-path: ${STRATA_PG_DUMP_PATH:pg_dump}
     timeout: 5m
 
