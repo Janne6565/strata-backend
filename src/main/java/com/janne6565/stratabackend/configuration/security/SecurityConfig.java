@@ -3,6 +3,7 @@ package com.janne6565.stratabackend.configuration.security;
 import com.janne6565.stratabackend.security.jwtfilter.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,8 +21,9 @@ public class SecurityConfig {
 
     /**
      * Public endpoints: login, the OpenAPI/Swagger surface used to generate the frontend client,
-     * and the actuator health probes (k8s liveness/readiness, scraped unauthenticated). Other
-     * actuator endpoints (metrics, etc.) stay behind authentication via the catch-all rule below.
+     * and the actuator health probes (k8s liveness/readiness, scraped unauthenticated). The
+     * Prometheus scrape endpoint is permitted separately (GET only, see {@link #PROMETHEUS_PATH});
+     * any other actuator endpoint stays behind authentication via the catch-all rule below.
      */
     private static final String[] PUBLIC_PATHS = {
         "/api/v1/auth/login",
@@ -34,6 +36,9 @@ public class SecurityConfig {
         "/actuator/health",
         "/actuator/health/**"
     };
+
+    /** Prometheus scrape endpoint, read by the in-cluster Grafana Alloy agent. */
+    private static final String PROMETHEUS_PATH = "/actuator/prometheus";
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -52,6 +57,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         auth ->
                                 auth.requestMatchers(PUBLIC_PATHS)
+                                        .permitAll()
+                                        // Prometheus scrape (Grafana Alloy, in-cluster, no
+                                        // credentials). Safe on the app port: the public
+                                        // Ingress only routes /api to this backend, / goes to
+                                        // the frontend, so Traefik never routes /actuator here.
+                                        .requestMatchers(HttpMethod.GET, PROMETHEUS_PATH)
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())

@@ -51,6 +51,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- /actuator/prometheus scrape endpoint (Grafana Alloy -> Grafana Cloud). Runtime-only:
+             no compile-time API is used, the registry is auto-configured. Version from the Boot parent. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!-- OpenAPI spec source for the frontend's Orval client (API-first contract) -->
         <dependency>
             <groupId>org.springdoc</groupId>
