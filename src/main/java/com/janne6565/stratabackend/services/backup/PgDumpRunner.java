@@ -6,11 +6,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.jdbc.autoconfigure.JdbcConnectionDetails;
 import org.springframework.stereotype.Component;
@@ -26,17 +29,53 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PgDumpRunner {
 
+    /** URI query parameters libpq accepts that can plausibly appear in a JDBC URL. */
+    private static final Set<String> LIBPQ_PARAMS =
+            Set.of(
+                    "sslmode",
+                    "sslcert",
+                    "sslkey",
+                    "sslrootcert",
+                    "sslcrl",
+                    "connect_timeout",
+                    "application_name",
+                    "options",
+                    "target_session_attrs",
+                    "gssencmode",
+                    "channel_binding",
+                    "keepalives",
+                    "keepalives_idle",
+                    "keepalives_interval",
+                    "keepalives_count");
+
     private final BackupProperties properties;
     private final JdbcConnectionDetails connectionDetails;
 
     /** Dumps Strata's own state database to {@code target}. */
     public void dumpTo(Path target) {
-        // jdbc:postgresql://host:port/db minus the "jdbc:" prefix is a valid libpq URI.
-        String libpqUri = connectionDetails.getJdbcUrl().replaceFirst("^jdbc:", "");
+        String libpqUri = toLibpqUri(connectionDetails.getJdbcUrl());
         Map<String, String> env = new LinkedHashMap<>();
         env.put("PGUSER", connectionDetails.getUsername());
         env.put("PGPASSWORD", connectionDetails.getPassword());
         dump(target, libpqUri, env);
+    }
+
+    /**
+     * {@code jdbc:postgresql://host:port/db?…} minus the {@code jdbc:} prefix is a libpq URI, but
+     * pg_dump rejects query parameters only pgjdbc knows (e.g. {@code loggerLevel}, which
+     * Testcontainers appends), so only parameters libpq understands are kept.
+     */
+    static String toLibpqUri(String jdbcUrl) {
+        String uri = jdbcUrl.replaceFirst("^jdbc:", "");
+        int query = uri.indexOf('?');
+        if (query < 0) {
+            return uri;
+        }
+        String kept =
+                Arrays.stream(uri.substring(query + 1).split("&"))
+                        .filter(param -> LIBPQ_PARAMS.contains(param.split("=", 2)[0]))
+                        .collect(Collectors.joining("&"));
+        return uri.substring(0, query) + (kept.isEmpty() ? "" : "?" + kept);
     }
 
     /** Dumps an arbitrary datasource (e.g. a discovered PostgreSQL database) to {@code target}. */

@@ -24,7 +24,7 @@ import org.testcontainers.utility.DockerImageName;
 
 /**
  * Runs the MinIO adapter against a real (Testcontainers) MinIO, which validates the SigV4 signing
- * end to end. Seeds with the {@code mc} client bundled in the server image.
+ * end to end. Seeds with the {@code mc} client bundled in the image.
  */
 @Testcontainers
 class MinioEngineIntegrationTest {
@@ -32,13 +32,15 @@ class MinioEngineIntegrationTest {
     private static final String USER = "strata-root";
     private static final String PASSWORD = "strata-secret-123";
 
+    // The official minio/minio image is no longer distributed on Docker Hub (and quay.io
+    // requires auth), so this uses Bitnami's archived build of the same server. Its entrypoint
+    // starts `minio server` on :9000 and the image bundles the `mc` client used for seeding.
     @Container
     static final GenericContainer<?> MINIO =
             new GenericContainer<>(
-                            DockerImageName.parse("minio/minio:RELEASE.2025-04-22T22-12-26Z"))
+                            DockerImageName.parse("bitnamilegacy/minio:2025.7.23-debian-12-r5"))
                     .withEnv("MINIO_ROOT_USER", USER)
                     .withEnv("MINIO_ROOT_PASSWORD", PASSWORD)
-                    .withCommand("server", "/data")
                     .withExposedPorts(9000)
                     .waitingFor(
                             Wait.forHttp("/minio/health/ready")
@@ -49,15 +51,24 @@ class MinioEngineIntegrationTest {
 
     @BeforeAll
     static void seed() throws Exception {
-        sh("mc alias set local http://127.0.0.1:9000 " + USER + " " + PASSWORD);
-        sh("mc mb local/photos local/empty");
+        sh(
+                "mc --config-dir /tmp/.mc alias set local http://127.0.0.1:9000 "
+                        + USER
+                        + " "
+                        + PASSWORD);
+        sh("mc --config-dir /tmp/.mc mb local/photos local/empty");
         sh("head -c 1000 /dev/zero > /tmp/a.jpg && head -c 2500 /dev/zero > /tmp/b.txt");
-        sh("mc cp /tmp/a.jpg 'local/photos/2024/my photo.jpg'");
-        sh("mc cp /tmp/b.txt local/photos/notes.txt");
+        sh("mc --config-dir /tmp/.mc cp /tmp/a.jpg 'local/photos/2024/my photo.jpg'");
+        sh("mc --config-dir /tmp/.mc cp /tmp/b.txt local/photos/notes.txt");
     }
 
+    /** Runs a shell command in the container, with Bitnami's mc directory on the PATH. */
     private static void sh(String command) throws Exception {
-        ExecResult result = MINIO.execInContainer("sh", "-c", command);
+        ExecResult result =
+                MINIO.execInContainer(
+                        "sh",
+                        "-c",
+                        "export PATH=\"$PATH:/opt/bitnami/minio-client/bin\"; " + command);
         if (result.getExitCode() != 0) {
             throw new IllegalStateException(command + " failed: " + result.getStderr());
         }
