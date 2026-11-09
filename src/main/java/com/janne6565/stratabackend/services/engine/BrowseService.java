@@ -10,6 +10,7 @@ import com.janne6565.stratabackend.model.core.QueryMode;
 import com.janne6565.stratabackend.model.core.QueryResult;
 import com.janne6565.stratabackend.model.core.RowPage;
 import com.janne6565.stratabackend.model.core.SchemaInfo;
+import com.janne6565.stratabackend.model.exception.BadRequestException;
 import com.janne6565.stratabackend.model.exception.EngineException;
 import com.janne6565.stratabackend.model.exception.NotFoundException;
 import com.janne6565.stratabackend.repository.DatasourceRepository;
@@ -83,6 +84,36 @@ public class BrowseService {
                     datasource.getDisplayName(),
                     AuditOutcome.FAILURE,
                     sql);
+            throw ex;
+        }
+    }
+
+    /**
+     * Opens one object of an object-storage datasource (MinIO) for streaming; the caller closes it.
+     * Audited as {@code DB_OBJECT_READ} with {@code bucket/key} as the target.
+     */
+    public StoredObject openObject(
+            UUID datasourceId, String bucket, String key, UserEntity caller) {
+        DatasourceEntity datasource = require(datasourceId);
+        if (!(engineRegistry.forDriver(datasource.getDriver())
+                instanceof ObjectStorageEngine storage)) {
+            throw new BadRequestException(
+                    "Datasource driver '" + datasource.getDriver() + "' does not store files");
+        }
+        ConnectionDetails details = connectionDetailsResolver.resolve(datasource);
+        String target = bucket + "/" + key;
+        try {
+            StoredObject object = storage.openObject(details, bucket, key);
+            audit(caller, datasource, "DB_OBJECT_READ", target, AuditOutcome.SUCCESS, null);
+            return object;
+        } catch (EngineException ex) {
+            audit(
+                    caller,
+                    datasource,
+                    "DB_OBJECT_READ",
+                    target,
+                    AuditOutcome.FAILURE,
+                    ex.getMessage());
             throw ex;
         }
     }

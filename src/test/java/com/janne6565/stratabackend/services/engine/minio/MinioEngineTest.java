@@ -16,6 +16,7 @@ import com.janne6565.stratabackend.model.core.SortDirection;
 import com.janne6565.stratabackend.model.core.TableInfo;
 import com.janne6565.stratabackend.model.exception.EngineException;
 import com.janne6565.stratabackend.services.engine.EngineMetrics;
+import com.janne6565.stratabackend.services.engine.StoredObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -194,6 +195,24 @@ class MinioEngineTest {
     }
 
     @Test
+    void streamsAnObject() throws Exception {
+        try (StoredObject object = engine.openObject(details(), "photos", "readme.txt")) {
+            assertThat(object.contentType()).isEqualTo("text/plain");
+            assertThat(object.sizeBytes()).isEqualTo(10L);
+            assertThat(object.content().readAllBytes()).hasSize(10);
+        }
+    }
+
+    @Test
+    void reportsMissingObjectsAndRejectsFolderKeys() {
+        assertThatThrownBy(() -> engine.openObject(details(), "photos", "nope.txt"))
+                .isInstanceOf(EngineException.class)
+                .hasMessageContaining("NoSuchKey");
+        assertThatThrownBy(() -> engine.openObject(details(), "photos", "2024/"))
+                .isInstanceOf(EngineException.class);
+    }
+
+    @Test
     void surfacesS3ErrorCode() {
         assertThatThrownBy(() -> engine.browse(details(), new ObjectRef("minio", "nope"), 0, 50))
                 .isInstanceOf(EngineException.class)
@@ -230,6 +249,20 @@ class MinioEngineTest {
                             + "<Bucket><Name>empty</Name><CreationDate>2026-01-01T00:00:00.000Z</CreationDate></Bucket>"
                             + "<Bucket><Name>photos</Name><CreationDate>2026-01-02T00:00:00.000Z</CreationDate></Bucket>"
                             + "</Buckets></ListAllMyBucketsResult>");
+            return;
+        }
+        int objectSlash = path.indexOf('/', 1);
+        if (objectSlash > 0) {
+            String key = path.substring(objectSlash + 1);
+            if (path.startsWith("/photos/") && PHOTOS.containsKey(key)) {
+                exchange.getResponseHeaders().add("Content-Type", "text/plain");
+                respond(exchange, 200, "x".repeat(PHOTOS.get(key).intValue()));
+            } else {
+                respond(
+                        exchange,
+                        404,
+                        "<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message></Error>");
+            }
             return;
         }
         String bucket = path.substring(1);

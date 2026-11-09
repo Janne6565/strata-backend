@@ -10,12 +10,14 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 /** Browse/query contract for a datasource. Authorization is enforced on the implementation. */
 @Tag(name = "Browse")
@@ -43,6 +45,16 @@ public interface BrowseApi {
             @RequestParam(required = false) String orderBy,
             @RequestParam(required = false) String direction,
             @RequestParam(name = "filter", required = false) List<String> filter);
+
+    @Operation(
+            operationId = "objectContent",
+            summary = "Stream one object's bytes from an object-storage datasource (MinIO)",
+            description =
+                    "Served as an attachment with nosniff and a sandboxing CSP; the Content-Type"
+                            + " is the one stored with the object and is not trusted for rendering.")
+    @GetMapping(path = "/objects/{bucket}/content", produces = MediaType.ALL_VALUE)
+    ResponseEntity<StreamingResponseBody> objectContent(
+            @PathVariable UUID id, @PathVariable String bucket, @RequestParam String key);
 
     // Explicit operationId: the default ("query") would make the generated client emit a
     // `QueryResult` result-type alias that collides with the QueryResult model import.

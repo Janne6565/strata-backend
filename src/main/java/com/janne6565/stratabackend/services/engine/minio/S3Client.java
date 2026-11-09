@@ -2,12 +2,16 @@ package com.janne6565.stratabackend.services.engine.minio;
 
 import com.janne6565.stratabackend.model.core.ConnectionDetails;
 import com.janne6565.stratabackend.model.exception.EngineException;
+import com.janne6565.stratabackend.services.engine.StoredObject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -117,6 +121,34 @@ final class S3Client {
         }
     }
 
+    /**
+     * GET on an object, streaming its body. The caller owns (and must close) the returned stream;
+     * the 20s timeout covers only the wait for response headers, not the transfer.
+     */
+    StoredObject getObject(String bucket, String key) {
+        HttpResponse<InputStream> response =
+                sendRaw(
+                        "GET",
+                        "/" + bucket + "/" + key,
+                        Map.of(),
+                        HttpResponse.BodyHandlers.ofInputStream());
+        int status = response.statusCode();
+        if (status / 100 != 2) {
+            String body;
+            try (InputStream in = response.body()) {
+                body = new String(in.readNBytes(64 * 1024), StandardCharsets.UTF_8);
+            } catch (IOException ex) {
+                body = "";
+            }
+            throw new EngineException("MinIO returned HTTP " + status + errorSuffix("GET", body));
+        }
+        HttpHeaders headers = response.headers();
+        return new StoredObject(
+                headers.firstValue("Content-Type").orElse(null),
+                headers.firstValueAsLong("Content-Length").orElse(-1L),
+                response.body());
+    }
+
     /** HEAD on an object: its response headers (lower-cased names), or 404 as an engine error. */
     Map<String, List<String>> headObject(String bucket, String key) {
         return send("HEAD", "/" + bucket + "/" + key, Map.of()).headers().map();
@@ -151,6 +183,14 @@ final class S3Client {
     }
 
     private HttpResponse<String> sendRaw(String method, String path, Map<String, String> query) {
+        return sendRaw(method, path, query, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private <T> HttpResponse<T> sendRaw(
+            String method,
+            String path,
+            Map<String, String> query,
+            HttpResponse.BodyHandler<T> bodyHandler) {
         String hostHeader = hostHeader();
         String queryString = S3Signer.canonicalQuery(query);
         URI uri =
@@ -177,7 +217,7 @@ final class S3Client {
                     .forEach(request::header);
         }
         try {
-            return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
+            return http.send(request.build(), bodyHandler);
         } catch (IOException ex) {
             throw new EngineException("MinIO request failed: " + ex.getMessage());
         } catch (InterruptedException ex) {
@@ -222,10 +262,7 @@ final class S3Client {
             factory.setExpandEntityReferences(false);
             Document doc =
                     factory.newDocumentBuilder()
-                            .parse(
-                                    new ByteArrayInputStream(
-                                            body.getBytes(
-                                                    java.nio.charset.StandardCharsets.UTF_8)));
+                            .parse(new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
             return doc.getDocumentElement();
         } catch (ParserConfigurationException | SAXException | IOException ex) {
             throw new EngineException("Unreadable MinIO response: " + ex.getMessage());

@@ -11,6 +11,7 @@ import com.janne6565.stratabackend.model.core.QueryMode;
 import com.janne6565.stratabackend.model.core.QueryResult;
 import com.janne6565.stratabackend.model.core.RowPage;
 import com.janne6565.stratabackend.model.core.TableInfo;
+import com.janne6565.stratabackend.services.engine.StoredObject;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
@@ -114,6 +115,14 @@ class MinioEngineIntegrationTest {
                 engine.runQuery(details(), "stat photos/2024/my photo.jpg", QueryMode.READ);
 
         assertThat(stat.rows()).contains(List.of("content-length", "1000"));
+    }
+
+    @Test
+    void streamsObjectBytes() throws Exception {
+        try (StoredObject object = engine.openObject(details(), "photos", "2024/my photo.jpg")) {
+            assertThat(object.sizeBytes()).isEqualTo(1_000L);
+            assertThat(object.content().readAllBytes()).hasSize(1_000);
+        }
     }
 
     @Test

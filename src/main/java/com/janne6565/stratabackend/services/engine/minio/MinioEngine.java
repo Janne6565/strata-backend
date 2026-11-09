@@ -15,6 +15,8 @@ import com.janne6565.stratabackend.model.core.TableInfo;
 import com.janne6565.stratabackend.model.exception.EngineException;
 import com.janne6565.stratabackend.services.engine.DatabaseEngine;
 import com.janne6565.stratabackend.services.engine.EngineMetrics;
+import com.janne6565.stratabackend.services.engine.ObjectStorageEngine;
+import com.janne6565.stratabackend.services.engine.StoredObject;
 import com.janne6565.stratabackend.services.engine.minio.S3Client.Bucket;
 import com.janne6565.stratabackend.services.engine.minio.S3Client.Listing;
 import com.janne6565.stratabackend.services.engine.minio.S3Client.S3Object;
@@ -46,7 +48,7 @@ import tools.jackson.databind.json.JsonMapper;
  * polling doesn't re-list large buckets on every tick.
  */
 @Component
-public class MinioEngine implements DatabaseEngine {
+public class MinioEngine implements DatabaseEngine, ObjectStorageEngine {
 
     /** The browse filter column that selects the folder (key prefix) to list. */
     public static final String PREFIX_FILTER = "prefix";
@@ -191,6 +193,18 @@ public class MinioEngine implements DatabaseEngine {
                     new EngineMetrics(null, size, (int) Math.min(objects, Integer.MAX_VALUE)));
         } catch (RuntimeException ex) {
             throw new EngineException("Metrics failed: " + ex.getMessage());
+        }
+    }
+
+    @Override
+    public StoredObject openObject(ConnectionDetails details, String bucket, String key) {
+        if (key == null || key.isEmpty() || key.endsWith("/")) {
+            throw new EngineException("Not an object key: " + key);
+        }
+        try {
+            return client(details).getObject(bucket, key);
+        } catch (RuntimeException ex) {
+            throw new EngineException("Read failed: " + ex.getMessage());
         }
     }
 

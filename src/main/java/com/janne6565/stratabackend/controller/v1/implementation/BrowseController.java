@@ -16,11 +16,19 @@ import com.janne6565.stratabackend.security.authorization.Operation;
 import com.janne6565.stratabackend.security.authorization.ResourceId;
 import com.janne6565.stratabackend.services.auth.CurrentUser;
 import com.janne6565.stratabackend.services.engine.BrowseService;
+import com.janne6565.stratabackend.services.engine.StoredObject;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.InvalidMediaTypeException;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 /**
  * Implements {@link BrowseApi}. Read operations are gated by DB_BROWSE/DB_QUERY_READ; the separate
@@ -87,6 +95,41 @@ public class BrowseController implements BrowseApi {
             filters.add(new ColumnFilter(parts[0], op, value));
         }
         return filters;
+    }
+
+    @Override
+    @NeedsValidation(Operation.DB_BROWSE)
+    public ResponseEntity<StreamingResponseBody> objectContent(
+            @ResourceId UUID id, String bucket, String key) {
+        StoredObject object = browseService.openObject(id, bucket, key, currentUser.require());
+        String fileName = key.substring(key.lastIndexOf('/') + 1);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(contentType(object.contentType()));
+        if (object.sizeBytes() >= 0) {
+            headers.setContentLength(object.sizeBytes());
+        }
+        // The bytes are uploader-controlled: never let a browser render them on our origin.
+        headers.setContentDisposition(
+                ContentDisposition.attachment().filename(fileName, StandardCharsets.UTF_8).build());
+        headers.set("X-Content-Type-Options", "nosniff");
+        headers.set("Content-Security-Policy", "sandbox; default-src 'none'");
+        StreamingResponseBody body =
+                out -> {
+                    try (object) {
+                        object.content().transferTo(out);
+                    }
+                };
+        return ResponseEntity.ok().headers(headers).body(body);
+    }
+
+    private static MediaType contentType(String stored) {
+        try {
+            return stored == null || stored.isBlank()
+                    ? MediaType.APPLICATION_OCTET_STREAM
+                    : MediaType.parseMediaType(stored);
+        } catch (InvalidMediaTypeException ex) {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
     }
 
     @Override
