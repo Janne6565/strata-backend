@@ -1,11 +1,13 @@
 package com.janne6565.stratabackend.services.kubernetes;
 
 import com.janne6565.stratabackend.model.core.WorkloadDescriptor;
+import com.janne6565.stratabackend.model.core.WorkloadDescriptor.ServiceEndpoint;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -97,10 +99,14 @@ public class KubernetesScanner {
         List<Integer> ports = new ArrayList<>(containerPorts(primary));
         Map<String, String> podLabels =
                 template.getMetadata() == null ? null : template.getMetadata().getLabels();
-        Service service = findBackingService(meta.getNamespace(), podLabels);
+        List<Service> services = findBackingServices(meta.getNamespace(), podLabels);
+        Service service = services.isEmpty() ? null : services.get(0);
         Integer servicePort = service == null ? null : firstServicePort(service);
-        if (servicePort != null && !ports.contains(servicePort)) {
-            ports.add(servicePort);
+        List<ServiceEndpoint> endpoints = serviceEndpoints(services);
+        for (ServiceEndpoint endpoint : endpoints) {
+            if (!ports.contains(endpoint.port())) {
+                ports.add(endpoint.port());
+            }
         }
 
         return Optional.of(
@@ -112,7 +118,8 @@ public class KubernetesScanner {
                         ports,
                         primary,
                         service == null ? null : service.getMetadata().getName(),
-                        servicePort));
+                        servicePort,
+                        endpoints));
     }
 
     private List<Integer> containerPorts(Container container) {
@@ -125,14 +132,30 @@ public class KubernetesScanner {
                 .toList();
     }
 
-    private Service findBackingService(String namespace, Map<String, String> podLabels) {
+    private List<Service> findBackingServices(String namespace, Map<String, String> podLabels) {
         if (podLabels == null || podLabels.isEmpty()) {
-            return null;
+            return List.of();
         }
         return client.services().inNamespace(namespace).list().getItems().stream()
                 .filter(s -> selectorMatches(s, podLabels))
-                .findFirst()
-                .orElse(null);
+                .toList();
+    }
+
+    /** Every port of every backing Service, in Service then port order. */
+    private List<ServiceEndpoint> serviceEndpoints(List<Service> services) {
+        List<ServiceEndpoint> endpoints = new ArrayList<>();
+        for (Service service : services) {
+            if (service.getSpec() == null || service.getSpec().getPorts() == null) {
+                continue;
+            }
+            for (ServicePort port : service.getSpec().getPorts()) {
+                if (port.getPort() != null) {
+                    endpoints.add(
+                            new ServiceEndpoint(service.getMetadata().getName(), port.getPort()));
+                }
+            }
+        }
+        return endpoints;
     }
 
     private boolean selectorMatches(Service service, Map<String, String> podLabels) {

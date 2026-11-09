@@ -15,6 +15,7 @@ import com.janne6565.stratabackend.model.core.DatasourceOrigin;
 import com.janne6565.stratabackend.model.core.DatasourceStatus;
 import com.janne6565.stratabackend.model.core.DiscoverySummary;
 import com.janne6565.stratabackend.model.core.WorkloadDescriptor;
+import com.janne6565.stratabackend.model.core.WorkloadDescriptor.ServiceEndpoint;
 import com.janne6565.stratabackend.repository.DatasourceRepository;
 import com.janne6565.stratabackend.services.kubernetes.CredentialResolver;
 import com.janne6565.stratabackend.services.kubernetes.KubernetesScanner;
@@ -118,6 +119,35 @@ class DiscoveryServiceTest {
         assertThat(saved.getDetectionConfidence()).isEqualTo("HIGH");
         assertThat(saved.getCredentialResolution().sources()).hasSize(1);
         assertThat(saved.getServicePort()).isEqualTo(5432);
+    }
+
+    @Test
+    void picksTheServicePortTheDetectorExpects() {
+        // e.g. MinIO: a console Service (9001) listed before the S3 API Service (9000).
+        WorkloadDescriptor workload =
+                new WorkloadDescriptor(
+                        "default",
+                        "StatefulSet",
+                        "orders",
+                        "postgres:17",
+                        List.of(8080, 5432),
+                        pgWorkload("orders").primaryContainer(),
+                        "orders-admin",
+                        8080,
+                        List.of(
+                                new ServiceEndpoint("orders-admin", 8080),
+                                new ServiceEndpoint("orders", 5432)));
+        when(scanner.scan()).thenReturn(List.of(workload));
+        when(datasourceRepository.findByDiscoveryKey("default/StatefulSet/orders"))
+                .thenReturn(Optional.empty());
+        when(datasourceRepository.findAll()).thenReturn(List.of());
+
+        service.rescan();
+
+        ArgumentCaptor<DatasourceEntity> captor = ArgumentCaptor.forClass(DatasourceEntity.class);
+        verify(datasourceRepository).save(captor.capture());
+        assertThat(captor.getValue().getServiceName()).isEqualTo("orders");
+        assertThat(captor.getValue().getServicePort()).isEqualTo(5432);
     }
 
     @Test

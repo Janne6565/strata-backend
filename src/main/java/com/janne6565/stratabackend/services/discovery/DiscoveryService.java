@@ -9,11 +9,13 @@ import com.janne6565.stratabackend.model.core.DatasourceStatus;
 import com.janne6565.stratabackend.model.core.DetectorMatch;
 import com.janne6565.stratabackend.model.core.DiscoverySummary;
 import com.janne6565.stratabackend.model.core.WorkloadDescriptor;
+import com.janne6565.stratabackend.model.core.WorkloadDescriptor.ServiceEndpoint;
 import com.janne6565.stratabackend.repository.DatasourceRepository;
 import com.janne6565.stratabackend.services.kubernetes.CredentialResolver;
 import com.janne6565.stratabackend.services.kubernetes.KubernetesScanner;
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -108,6 +110,22 @@ public class DiscoveryService {
                 workload.primaryContainer(), detector.credentials().env(), strategy);
     }
 
+    /**
+     * The Service endpoint to connect through: the first one on a port the detector expects (so a
+     * workload fronted by several Services/ports — MinIO's S3 API vs. its console — resolves to the
+     * protocol port), else the workload's default endpoint.
+     */
+    private ServiceEndpoint endpointFor(DetectorMatch match, WorkloadDescriptor workload) {
+        Detector detector = detectorsById.get(match.detectorId());
+        List<Integer> expected =
+                detector == null || detector.match() == null || detector.match().ports() == null
+                        ? List.of()
+                        : detector.match().ports();
+        return workload.preferredEndpoint(expected)
+                .orElseGet(
+                        () -> new ServiceEndpoint(workload.serviceName(), workload.servicePort()));
+    }
+
     private DatasourceEntity newDiscovered(
             WorkloadDescriptor workload,
             DetectorMatch match,
@@ -121,8 +139,9 @@ public class DiscoveryService {
         ds.setNamespace(workload.namespace());
         ds.setWorkloadKind(workload.workloadKind());
         ds.setWorkloadName(workload.workloadName());
-        ds.setServiceName(workload.serviceName());
-        ds.setServicePort(workload.servicePort());
+        ServiceEndpoint endpoint = endpointFor(match, workload);
+        ds.setServiceName(endpoint.serviceName());
+        ds.setServicePort(endpoint.port());
         ds.setDriver(match.driver());
         ds.setDisplayName(workload.workloadName());
         ds.setDetectionConfidence(match.confidence().name());
@@ -147,11 +166,12 @@ public class DiscoveryService {
         if (!locked.contains("driver")) {
             ds.setDriver(match.driver());
         }
+        ServiceEndpoint endpoint = endpointFor(match, workload);
         if (!locked.contains("serviceName")) {
-            ds.setServiceName(workload.serviceName());
+            ds.setServiceName(endpoint.serviceName());
         }
         if (!locked.contains("servicePort")) {
-            ds.setServicePort(workload.servicePort());
+            ds.setServicePort(endpoint.port());
         }
         ds.setDetectionConfidence(match.confidence().name());
         ds.setDetectedVia(match.detectorId());
